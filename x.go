@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var xTmpl = template.Must(template.New("x").ParseFiles("public/x.html"))
+var xTmpl = template.Must(template.ParseFiles("public/x.html"))
 
 type x struct {
 	ImportRoot string

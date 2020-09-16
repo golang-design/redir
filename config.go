@@ -10,7 +10,7 @@ import (
 	"os"
 	"runtime"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // build info, assign by compile time or runtime.
@@ -21,19 +21,19 @@ var (
 )
 
 type config struct {
-	Host  string `json:"host"`
-	Addr  string `json:"addr"`
-	Store string `json:"store"`
-	Log   string `json:"log"`
+	Host  string `yaml:"host"`
+	Addr  string `yaml:"addr"`
+	Store string `yaml:"store"`
+	Log   string `yaml:"log"`
 	S     struct {
-		Prefix string `json:"prefix"`
-	} `json:"s"`
+		Prefix string `yaml:"prefix"`
+	} `yaml:"s"`
 	X struct {
-		Prefix     string `json:"prefix"`
-		VCS        string `json:"vcs"`
-		ImportPath string `json:"import_path"`
-		RepoPath   string `json:"repo_path"`
-	} `json:"x"`
+		Prefix     string `yaml:"prefix"`
+		VCS        string `yaml:"vcs"`
+		ImportPath string `yaml:"import_path"`
+		RepoPath   string `yaml:"repo_path"`
+	} `yaml:"x"`
 }
 
 func (c *config) parse() {
