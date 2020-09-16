@@ -1,0 +1,40 @@
+# Copyright 2020 The golang.design Initiative authors.
+# All rights reserved. Use of this source code is governed
+# by a MIT license that can be found in the LICENSE file.
+
+version: "3"
+
+services:
+  redir:
+    container_name: redir
+    restart: always
+    image: golang-design/redir:latest
+    environment:
+      REDIR_CONF: ./data/container.yml
+    cap_add:
+      - SYS_PTRACE # for debugging
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    networks:
+      redirnet:
+        ipv4_address: 172.16.238.10
+  redis:
+    container_name: redis
+    restart: always
+    volumes:
+      - ../data:/data
+    image: redis:3.2
+    ports:
+      - "6379:6379"
+    networks:
+      redirnet:
+        ipv4_address: 172.16.238.11
+networks:
+  redirnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.238.0/24

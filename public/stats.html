@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The golang.design Short Link Aliases</title>
+  <style>
+  table {
+    text-align: left;
+  }
+  </style>
+</head>
+<body>
+<h1>The golang.design Initiative</h1>
+<h5><a href="https://github.com/golang-design/redir">A request redirector</a></h5>
+<table style="width:100%">
+  <tr>
+    <th>PV</th>
+    <th>UV</th>
+    <th>URL</th>
+  </tr>
+  {{range .Records}}
+  <tr>
+    <td>{{ .PV }}</td>
+    <td> {{ .UV }}</td>
+    <td><a href="{{ .URL }}">https://golang.design/s/{{ .Alias }}</a></td>
+  </tr>
+  {{end}}
+</table>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Copyright 2020 The golang.design Initiative authors.
+# All rights reserved. Use of this source code is governed
+# by a MIT license that can be found in the LICENSE file.
+
+---
+host: https://golang.design
+addr: :8080
+store: redis://localhost:6379/9
+log: "golang.design/redir: "
+s:
+  prefix: /s/
+x:
+  prefix: /x/
+  vcs: git
+  import_path: golang.design/x/*
+  repo_path: https://github.com/golang-design/*
