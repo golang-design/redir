@@ -83,7 +83,10 @@ func processCmd() {
 
 	done := make(chan bool, 1)
 	go func() {
-		shortCmd(ctx, op(*operate), *alias, *link)
+		err := shortCmd(ctx, op(*operate), *alias, *link)
+		if err != nil {
+			log.Println(err)
+		}
 		done <- true
 	}()
 

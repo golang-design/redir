@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
@@ -42,20 +43,15 @@ func (o op) valid() bool {
 }
 
 // shortCmd processes the given alias and link with a specified op.
-func shortCmd(ctx context.Context, operate op, alias, link string) {
+func shortCmd(ctx context.Context, operate op, alias, link string) (retErr error) {
 	s, err := newStore(conf.Store)
 	if err != nil {
-		log.Fatalf("cannot create a new alias, err: %v", err)
+		return fmt.Errorf("cannot create a new alias, err: %w", err)
 	}
-	defer func() {
-		err := s.Close()
-		if err != nil {
-			log.Fatalf("cannot close data store conn, err: %v", err)
-		}
-	}()
+	defer s.Close()
 
 	errf := func(o op, err error) {
-		log.Printf("cannot %v alias to data store, err: %v\n", o, err)
+		retErr = fmt.Errorf("cannot %v alias to data store, err: %w", o, err)
 	}
 	switch operate {
 	case opCreate:

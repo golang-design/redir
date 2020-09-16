@@ -22,8 +22,12 @@ compose:
 	docker-compose -f docker/docker-compose.yml up -d
 compose-down:
 	docker-compose -f docker/docker-compose.yml down
+test:
+	mkdir -p build
+	go test -cover -coverprofile=build/cover.test -v ./...
+	go tool cover -html=build/cover.test -o build/cover.html
 clean:
 	rm redir.app
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
 	docker rmi -f $(IMAGE):latest $(IMAGE):$(VERSION) 2> /dev/null; true
-.PHONY: native run build compose clean
+.PHONY: native run build compose compose-test clean

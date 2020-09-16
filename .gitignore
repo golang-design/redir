@@ -13,5 +13,6 @@
 *.app
 *.rdb
 
-# Dependency directories (remove the comment below to include it)
+# directories (remove the comment below to include it)
 vendor/
+build/
