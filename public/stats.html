@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-80889616-4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-80889616-4');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>golang.design link aliases</title>
@@ -68,7 +76,7 @@
     <tr>
       <td>{{ .PV }}</td>
       <td> {{ .UV }}</td>
-      <td><a href="{{ .URL }}">https://golang.design/s/{{ .Alias }}</a></td>
+      <td><a href="https://golang.design/s/{{ .Alias }}">https://golang.design/s/{{ .Alias }}</a></td>
     </tr>
     {{end}}
   </table>
