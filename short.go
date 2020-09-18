@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -25,9 +24,9 @@ type op string
 const (
 	// opCreate represents a create operation for short link
 	opCreate op = "create"
-	// opDelete represents a create operation for short link
+	// opDelete represents a delete operation for short link
 	opDelete = "delete"
-	// opUpdate represents a create operation for short link
+	// opUpdate represents a update operation for short link
 	opUpdate = "update"
 	// opFetch represents a fetch operation for short link
 	opFetch = "fetch"
@@ -148,8 +147,6 @@ func (s *server) readIP(r *http.Request) string {
 	}
 	return ip
 }
-
-var statsTmpl = template.Must(template.ParseFiles("public/stats.html"))
 
 type arecords struct {
 	Records []arecord

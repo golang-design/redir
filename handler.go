@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
 )
@@ -21,7 +22,15 @@ type server struct {
 	visitCh chan visit
 }
 
+var (
+	xTmpl     *template.Template
+	statsTmpl *template.Template
+)
+
 func newServer(ctx context.Context) *server {
+	xTmpl = template.Must(template.ParseFiles("public/x.html"))
+	statsTmpl = template.Must(template.ParseFiles("public/stats.html"))
+
 	db, err := newStore(conf.Store)
 	if err != nil {
 		log.Fatalf("cannot establish connection to database, err: %v", err)

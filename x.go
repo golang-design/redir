@@ -7,12 +7,9 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 )
-
-var xTmpl = template.Must(template.ParseFiles("public/x.html"))
 
 type x struct {
 	ImportRoot string
