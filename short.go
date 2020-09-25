@@ -105,22 +105,36 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: use LRU to optimize fetch speed in the future.
-	raw, err := s.db.FetchAlias(ctx, alias)
-	if err != nil {
-		return
+	checkdb := func(url string) (string, error) {
+		raw, err := s.db.FetchAlias(ctx, alias)
+		if err != nil {
+			return "", err
+		}
+		c := arecord{}
+		err = json.Unmarshal(StringToBytes(raw), &c)
+		if err != nil {
+			return "", err
+		}
+		if url != c.URL {
+			s.cache.Put(alias, c.URL)
+			url = c.URL
+		}
+		return url, nil
 	}
-	c := arecord{}
-	err = json.Unmarshal([]byte(raw), &c)
-	if err != nil {
-		return
+
+	url, ok := s.cache.Get(alias)
+	if !ok {
+		url, err = checkdb(url)
+		if err != nil {
+			return
+		}
 	}
 
 	// redirect the user immediate, but run pv/uv count in background
-	http.Redirect(w, r, c.URL, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 
-	// count after the forwarding
-	s.visitCh <- visit{s.readIP(r), alias}
+	// count visit in another goroutine so it won't block the redirect.
+	go func() { s.visitCh <- visit{s.readIP(r), alias} }()
 }
 
 // readIP implements a best effort approach to return the real client IP,
@@ -165,7 +179,7 @@ func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error
 			retErr = err
 			return
 		}
-		err = json.Unmarshal([]byte(raw), &ars.Records[i])
+		err = json.Unmarshal(StringToBytes(raw), &ars.Records[i])
 		if err != nil {
 			retErr = err
 			return

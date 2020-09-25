@@ -6,6 +6,8 @@
 host: https://golang.design
 addr: :8080
 store: redis://localhost:6379/9
+backup_min: 10
+backup_dir: ./data/backup
 log: "golang.design/redir: "
 s:
   prefix: /s/

@@ -7,9 +7,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type visit struct {
@@ -18,7 +24,8 @@ type visit struct {
 }
 
 type server struct {
-	db      *store // *store
+	db      *store
+	cache   *lru
 	visitCh chan visit
 }
 
@@ -37,6 +44,7 @@ func newServer(ctx context.Context) *server {
 	}
 	s := &server{
 		db:      db,
+		cache:   newLRU(true),
 		visitCh: make(chan visit, 100),
 	}
 	go s.counting(ctx)
@@ -69,8 +77,59 @@ func (s *server) registerHandler() {
 	http.Handle(conf.X.Prefix, s.xHandler(conf.X.VCS, conf.X.ImportPath, conf.X.RepoPath))
 }
 
-// backup tries to backup the data store to local files every week.
-// it will keeps the latest 10 backups of the data read from data store.
+// backup tries to backup the data store to local files.
 func (s *server) backup(ctx context.Context) {
-	// TODO: do self-backups
+	if _, err := os.Stat(conf.BackupDir); os.IsNotExist(err) {
+		err := os.Mkdir(conf.BackupDir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("cannot create backup directory, err: %v\n", err)
+		}
+	}
+
+	t := time.NewTicker(time.Minute * time.Duration(conf.BackupMin))
+	log.Printf("internal backup is running...")
+	for {
+		select {
+		case <-t.C:
+			r, err := s.db.Keys(ctx, "*")
+			if err != nil {
+				log.Printf("backup failure, err: %v\n", err)
+				continue
+			}
+			if len(r) == 0 { // no keys for backup
+				continue
+			}
+
+			d := make(map[string]interface{}, len(r))
+			for _, k := range r {
+				v, err := s.db.Fetch(ctx, k)
+				if err != nil {
+					log.Printf("backup failed because of key %v, err: %v\n", k, err)
+					continue
+				}
+				var vv interface{}
+				err = json.Unmarshal(StringToBytes(v), &vv)
+				if err != nil {
+					log.Printf("backup failed because unmarshal of key %v, err: %v\n", k, err)
+					continue
+				}
+				d[k] = vv
+			}
+
+			b, err := yaml.Marshal(d)
+			if err != nil {
+				log.Printf("backup failed when converting to yaml, err: %v\n", err)
+				continue
+			}
+
+			name := fmt.Sprintf("/backup-%s.yml", time.Now().Format(time.RFC3339))
+			err = ioutil.WriteFile(conf.BackupDir+name, b, os.ModePerm)
+			if err != nil {
+				log.Printf("backup failed when saving the file, err: %v\n", err)
+				continue
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }

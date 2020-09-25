@@ -24,7 +24,7 @@ services:
     container_name: redis
     restart: always
     volumes:
-      - ../data:/data
+      - ../data/redis:/data
     image: redis:3.2
     ports:
       - "6379:6379"

@@ -47,7 +47,7 @@ func check(ctx context.Context, t *testing.T, s *store, key string, rr interface
 	if err != nil {
 		t.Fatalf("Fetch failure, err: %v\n", err)
 	}
-	err = json.Unmarshal([]byte(r), rr)
+	err = json.Unmarshal(StringToBytes(r), rr)
 	if err != nil {
 		t.Fatalf("Unmarshal failure, err: %v\n", err)
 	}

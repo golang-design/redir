@@ -21,11 +21,13 @@ var (
 )
 
 type config struct {
-	Host  string `yaml:"host"`
-	Addr  string `yaml:"addr"`
-	Store string `yaml:"store"`
-	Log   string `yaml:"log"`
-	S     struct {
+	Host      string `yaml:"host"`
+	Addr      string `yaml:"addr"`
+	Store     string `yaml:"store"`
+	BackupMin int    `yaml:"backup_min"`
+	BackupDir string `yaml:"backup_dir"`
+	Log       string `yaml:"log"`
+	S         struct {
 		Prefix string `yaml:"prefix"`
 	} `yaml:"s"`
 	X struct {
