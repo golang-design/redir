@@ -29,10 +29,12 @@ The current approach is to use `redir` command on the [golang.design](https://go
 server. Here is the overview of its usage:
 
 ```
-usage: redir [-s] [-op <operator> -a <alias> -l <link>]
+usage: redir [-s] [-f <file>] [-op <operator> -a <alias> -l <link>]
 options:
   -a string
         alias for a new link
+  -f string
+        import aliases from a YAML file
   -l string
         actual link for the alias, optional for delete/fetch
   -op string
@@ -40,12 +42,13 @@ options:
   -s    run redir service
 example:
 redir -s                  run the redir service
+redir -f ./import.yml       import aliases from a file
 redir -a alias -l link    allocate new short link if possible
 redir -op fetch -a alias  fetch alias information
 ```
 
-For the command line usage, one only need to use `-a`, `-l` and `-op` if needed.
-The command will talk to the redis data store and issue a new allocated alias.
+For the command line usage, one only needs to use `-a`, `-l`, and `-op` if needed.
+The command will talk to the Redis data store and issue a new allocated alias.
 For instance, the following command:
 
 ```
@@ -53,6 +56,14 @@ redir -a changkun -l https://changkun.de
 ```
 
 creates a new alias under [golang.design/s/changkun](https://golang.design/s/changkun).
+
+Import from a YAML file is also possible, for instance:
+
+```
+redir -f import.yml
+```
+
+The aliases are either imported as a new alias or updated for an existing alias.
 
 Moreover, it is possible to visit [`/s`](https://golang.design/s) directly listing all exist aliases under [golang.design](https://golang.design/).
 
@@ -79,4 +90,4 @@ make clean        # cleanup
 
 ## License
 
-MIT &copy; The golang.design Initiative Authors
+MIT &copy; The [golang.design](https://golang.design) Initiative Authors
