@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	daemon  = flag.Bool("s", false, "run redir service")
-	operate = flag.String("op", "create", "operators, create/update/delete/fetch")
-	alias   = flag.String("a", "", "alias for a new link")
-	link    = flag.String("l", "", "actual link for the alias, optional for delete/fetch")
+	daemon   = flag.Bool("s", false, "run redir service")
+	fromfile = flag.String("f", "", "import aliases from a YAML file")
+	operate  = flag.String("op", "create", "operators, create/update/delete/fetch")
+	alias    = flag.String("a", "", "alias for a new link")
+	link     = flag.String("l", "", "actual link for the alias, optional for delete/fetch")
 )
 
 func main() {
@@ -26,6 +27,11 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Usage = usage
 	flag.Parse()
+
+	if len(os.Args) < 2 {
+		flag.Usage()
+		return
+	}
 
 	if daemon == nil {
 		flag.Usage()
@@ -48,12 +54,13 @@ func processServer() {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `usage: redir [-s] [-op <operator> -a <alias> -l <link>]
+	fmt.Fprintf(os.Stderr, `usage: redir [-s] [-f <file>] [-op <operator> -a <alias> -l <link>]
 options:
 `)
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, `example:
 redir -s                  run the redir service
+redir -f ./import.yml       import aliases from a file
 redir -a alias -l link    allocate new short link if possible
 redir -op fetch -a alias  fetch alias information
 `)
@@ -61,6 +68,17 @@ redir -op fetch -a alias  fetch alias information
 }
 
 func processCmd() {
+	if fromfile != nil {
+		fname := *fromfile
+		if fname == "" {
+			flag.Usage()
+			return
+		}
+
+		shortFile(fname)
+		return
+	}
+
 	if operate == nil || !op(*operate).valid() {
 		flag.Usage()
 		return

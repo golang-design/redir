@@ -10,12 +10,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis/v8"
+	"gopkg.in/yaml.v3"
 )
 
 // op is a short link operator
@@ -39,6 +42,31 @@ func (o op) valid() bool {
 	default:
 		return false
 	}
+}
+
+func shortFile(fname string) {
+	b, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Fatalf("cannot read import file, err: %v\n", err)
+	}
+
+	d := map[string]string{}
+	err = yaml.Unmarshal(b, &d)
+	if err != nil {
+		log.Fatalf("cannot unmarshal the imported file, err: %v\n", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	for alias, link := range d {
+		err = shortCmd(ctx, opUpdate, alias, link)
+		if err != nil {
+			err = shortCmd(ctx, opCreate, alias, link)
+			if err != nil {
+				log.Fatalf("cannot import alias %v, err: %v\n", alias, err)
+			}
+		}
+	}
+	return
 }
 
 // shortCmd processes the given alias and link with a specified op.
