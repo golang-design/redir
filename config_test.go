@@ -18,8 +18,7 @@ func TestParseConfig(t *testing.T) {
 		if v.Field(i).Kind() == reflect.Struct {
 			continue
 		}
-		vv, ok := v.Field(i).Interface().(string)
-		if ok && len(vv) > 0 {
+		if v.Field(i).Interface() != nil {
 			continue
 		}
 		t.Fatalf("read empty from config, field: %v", v.Type().Field(i).Name)

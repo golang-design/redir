@@ -40,13 +40,25 @@ func (l *lru) clear() {
 	for {
 		select {
 		case <-t.C:
-			l.mu.Lock()
-			for e := l.elems.Front(); e != nil; e = e.Next() {
-				l.elems.Remove(e)
-			}
-			l.mu.Unlock()
+			l.flush()
 		}
 	}
+}
+
+func (l *lru) flush() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	for e := l.elems.Front(); e != nil; e = e.Next() {
+		l.elems.Remove(e)
+	}
+	l.size = 0
+}
+
+func (l *lru) Len() uint {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.size
 }
 
 func (l *lru) Get(k string) (string, bool) {
@@ -77,10 +89,11 @@ func (l *lru) Put(k, v string) {
 	}
 
 	// check if cache is full
+	l.elems.PushFront(i)
 	if l.size+1 > l.cap {
 		l.elems.Remove(l.elems.Back())
+	} else {
+		l.size++
 	}
-	l.elems.PushFront(i)
-	l.size++
 	return
 }

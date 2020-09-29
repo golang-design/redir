@@ -8,6 +8,8 @@ services:
   redir:
     container_name: redir
     restart: always
+    volumes:
+      - ../data/backup:/data/backup
     image: golang-design/redir:latest
     environment:
       REDIR_CONF: ./data/container.yml

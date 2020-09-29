@@ -12,11 +12,17 @@ func TestLRU(t *testing.T) {
 	if _, ok := l.Get("a"); ok {
 		t.Fatalf("Get value from empty LRU")
 	}
+	if l.Len() != 0 {
+		t.Fatalf("wrong size, want 0, got %v", l.Len())
+	}
 
 	l.Put("a", "1") // a
 	v, ok := l.Get("a")
 	if !ok { // a -> b
 		t.Fatalf("Get value from LRU found nothing")
+	}
+	if l.Len() != 1 {
+		t.Fatalf("wrong size, want 1, got %v", l.Len())
 	}
 
 	l.Put("b", "2") // b -> a
@@ -27,6 +33,10 @@ func TestLRU(t *testing.T) {
 	if v != "1" {
 		t.Fatalf("Get value from LRU want 1 got %v", v)
 	}
+	if l.Len() != 2 {
+		t.Fatalf("wrong size, want 2, got %v", l.Len())
+	}
+
 	l.Put("c", "3") // c -> a
 	_, ok = l.Get("b")
 	if ok {
@@ -38,6 +48,28 @@ func TestLRU(t *testing.T) {
 	}
 	if v != "3" {
 		t.Fatalf("Get value from LRU want 3 got %v", v)
+	}
+	if l.Len() != 2 {
+		t.Fatalf("wrong size, want 2, got %v", l.Len())
+	}
+
+	l.flush()
+	if l.Len() != 0 {
+		t.Fatalf("wrong size, want 0, got %v", l.Len())
+	}
+	l.Put("a", "1")
+	l.Put("b", "1")
+	l.Put("c", "1")
+	l.Put("a", "1")
+	v, ok = l.Get("a")
+	if !ok { // a
+		t.Fatalf("Get value from LRU found nothing")
+	}
+	if v != "1" {
+		t.Fatalf("Get value from LRU want 1 got %v", v)
+	}
+	if l.Len() != 2 {
+		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
 }
 
