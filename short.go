@@ -123,11 +123,10 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 			// throw 50x. The server should be able to identify the issue.
 			log.Printf("stats err: %v\n", err)
 			// Use 307 redirect to 404 page
-			http.Redirect(w, r, conf.Host+"/404.html", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/404.html", http.StatusTemporaryRedirect)
 		}
 	}()
-
-	alias := strings.TrimLeft(r.URL.Path, conf.S.Prefix)
+	alias := strings.TrimPrefix(r.URL.Path, conf.S.Prefix)
 	if alias == "" {
 		err = s.stats(ctx, w)
 		return
