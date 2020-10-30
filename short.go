@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
@@ -190,7 +191,10 @@ func (s *server) readIP(r *http.Request) string {
 }
 
 type arecords struct {
-	Records []arecord
+	Title           string
+	Host            string
+	Records         []arecord
+	GoogleAnalytics template.HTML
 }
 
 func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error) {
@@ -198,8 +202,13 @@ func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error
 	if retErr != nil {
 		return
 	}
-
-	ars := arecords{Records: make([]arecord, len(aliases))}
+	fmt.Println(conf.GoogleAnalytics)
+	ars := arecords{
+		Title:           conf.Title,
+		Host:            conf.Host,
+		Records:         make([]arecord, len(aliases)),
+		GoogleAnalytics: template.HTML(conf.GoogleAnalytics),
+	}
 	for i, a := range aliases {
 		raw, err := s.db.Fetch(ctx, a)
 		if err != nil {

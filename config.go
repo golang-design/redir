@@ -21,6 +21,7 @@ var (
 )
 
 type config struct {
+	Title     string `yaml:"title"`
 	Host      string `yaml:"host"`
 	Addr      string `yaml:"addr"`
 	Store     string `yaml:"store"`
@@ -35,7 +36,9 @@ type config struct {
 		VCS        string `yaml:"vcs"`
 		ImportPath string `yaml:"import_path"`
 		RepoPath   string `yaml:"repo_path"`
+		GoDocHost  string `yaml:"godoc_host"`
 	} `yaml:"x"`
+	GoogleAnalytics string `yaml:"google_analytics"`
 }
 
 func (c *config) parse() {

@@ -6,7 +6,7 @@ a request redirector that is dedicated for golang.design
 
 The current `redir` implementation talks to a redis data store for PV/UV counting,
 as well as short alias storage. In the booting phase, it will read `REDIR_CONF`
-from environment variable to identify configuration file (default: `./config.yml`).
+from environment variable to identify configuration file (default: [`./config.yml`](./config.yml)).
 
 `redir` is designed for the following purpose: serve two major
 redirectors `/s` and `/x` (at the moment).
@@ -72,12 +72,12 @@ Moreover, it is possible to visit [`/s`](https://golang.design/s) directly listi
 `Makefile` defines different ways to build the service:
 
 ```bash
-make              # build native binary
-make run          # assume your local redis is running
-make build        # build docker images
-make compose      # run via docker-compose
-make compose-down # remove compose stuff
-make clean        # cleanup
+make       # build native binary
+make run   # assume your local redis is running
+make build # build docker images
+make up    # run via docker-compose
+make down  # remove compose stuff
+make clean # cleanup
 ```
 
 ## Troubleshooting
@@ -87,6 +87,7 @@ make clean        # cleanup
 1. make sure you are a member of golang.design
 2. add ssh public key to your account
 3. `git config --global url."git@github.com:".insteadOf "https://github.com/"`
+4. add `export GOPRIVATE=golang.design/x` to your bash profile (e.g. `.zshrc`).
 
 ## License
 

@@ -3,7 +3,8 @@
 # by a MIT license that can be found in the LICENSE file.
 
 ---
-host: https://golang.design/
+title: The golang.design Initiative
+host: https://golang.design
 addr: :8080
 store: redis://redis:6379/9
 backup_min: 1440 # 24h
@@ -16,3 +17,13 @@ x:
   vcs: git
   import_path: golang.design/x/*
   repo_path: https://github.com/golang-design/*
+  godoc_host: https://pkg.go.dev/
+google_analytics: |
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-80889616-4"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-80889616-4');
+  </script>

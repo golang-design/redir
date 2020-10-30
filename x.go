@@ -7,15 +7,17 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 )
 
 type x struct {
-	ImportRoot string
-	VCS        string
-	VCSRoot    string
-	Suffix     string
+	ImportRoot      string
+	VCS             string
+	VCSRoot         string
+	Suffix          string
+	GoogleAnalytics template.HTML
 }
 
 // xHandler redirect returns an HTTP handler that redirects requests for
@@ -42,7 +44,7 @@ func (s *server) xHandler(vcs, importPath, repoPath string) http.Handler {
 		var importRoot, repoRoot, suffix string
 		if wildcard {
 			if path == importPath {
-				http.Redirect(w, req, "https://pkg.go.dev/"+importPath, 302)
+				http.Redirect(w, req, conf.X.GoDocHost+importPath, 302)
 				return
 			}
 			if !strings.HasPrefix(path, importPath+"/") {
@@ -65,10 +67,11 @@ func (s *server) xHandler(vcs, importPath, repoPath string) http.Handler {
 			suffix = path[len(importPath):]
 		}
 		d := &x{
-			ImportRoot: importRoot,
-			VCS:        vcs,
-			VCSRoot:    repoRoot,
-			Suffix:     suffix,
+			ImportRoot:      importRoot,
+			VCS:             vcs,
+			VCSRoot:         repoRoot,
+			Suffix:          suffix,
+			GoogleAnalytics: template.HTML(conf.GoogleAnalytics),
 		}
 		var buf bytes.Buffer
 		err := xTmpl.Execute(&buf, d)

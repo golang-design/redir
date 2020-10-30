@@ -33,10 +33,6 @@ func main() {
 		return
 	}
 
-	if daemon == nil {
-		flag.Usage()
-		return
-	}
 	if *daemon {
 		processServer()
 		return
@@ -68,29 +64,24 @@ redir -op fetch -a alias  fetch alias information
 }
 
 func processCmd() {
-	if fromfile != nil {
-		fname := *fromfile
-		if fname == "" {
-			flag.Usage()
-			return
-		}
-
-		shortFile(fname)
+	if *fromfile != "" {
+		shortFile(*fromfile)
 		return
 	}
 
-	if operate == nil || !op(*operate).valid() {
+	if !op(*operate).valid() {
 		flag.Usage()
 		return
 	}
+
 	switch o := op(*operate); o {
 	case opCreate, opUpdate:
-		if alias == nil || link == nil || *alias == "" || *link == "" {
+		if *alias == "" || *link == "" {
 			flag.Usage()
 			return
 		}
 	case opDelete, opFetch:
-		if alias == nil || *alias == "" {
+		if *alias == "" {
 			flag.Usage()
 			return
 		}
