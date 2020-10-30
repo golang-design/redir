@@ -127,7 +127,7 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/404.html", http.StatusTemporaryRedirect)
 		}
 	}()
-	alias := strings.TrimPrefix(r.URL.Path, conf.S.Prefix)
+	alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, conf.S.Prefix), "/")
 	if alias == "" {
 		err = s.stats(ctx, w)
 		return
