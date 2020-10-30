@@ -14,7 +14,7 @@
 *.rdb
 
 # directories (remove the comment below to include it)
-vendor/
+# vendor/
 build/
 data/redis
 data/backup
