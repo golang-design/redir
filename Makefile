@@ -31,4 +31,4 @@ clean: down
 	rm redir.app
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
 	docker rmi -f $(IMAGE):latest $(IMAGE):$(VERSION) 2> /dev/null; true
-.PHONY: native run build compose compose-test clean
+.PHONY: all native run build up down test clean
