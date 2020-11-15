@@ -15,6 +15,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -202,7 +203,7 @@ func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error
 	if retErr != nil {
 		return
 	}
-	fmt.Println(conf.GoogleAnalytics)
+
 	ars := arecords{
 		Title:           conf.Title,
 		Host:            conf.Host,
@@ -221,6 +222,13 @@ func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error
 			return
 		}
 	}
+
+	sort.Slice(ars.Records, func(i, j int) bool {
+		if ars.Records[i].PV > ars.Records[j].PV {
+			return true
+		}
+		return ars.Records[i].UV > ars.Records[j].UV
+	})
 
 	var buf bytes.Buffer
 	retErr = statsTmpl.Execute(&buf, ars)
