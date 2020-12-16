@@ -72,42 +72,43 @@ func shortFile(fname string) {
 }
 
 // shortCmd processes the given alias and link with a specified op.
-func shortCmd(ctx context.Context, operate op, alias, link string) (retErr error) {
+func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 	s, err := newStore(conf.Store)
 	if err != nil {
-		return fmt.Errorf("cannot create a new alias, err: %w", err)
+		err = fmt.Errorf("cannot create a new alias, err: %w", err)
+		return
 	}
 	defer s.Close()
 
-	errf := func(o op, err error) {
-		retErr = fmt.Errorf("cannot %v alias to data store, err: %w", o, err)
-	}
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("cannot %v alias to data store, err: %w", operate, err)
+		}
+	}()
+
 	switch operate {
 	case opCreate:
 		err = s.StoreAlias(ctx, alias, link)
 		if err != nil {
-			errf(opCreate, err)
 			return
 		}
 		log.Printf("alias %v has been created.\n", alias)
 	case opUpdate:
 		err = s.UpdateAlias(ctx, alias, link)
 		if err != nil {
-			errf(opUpdate, err)
 			return
 		}
 		log.Printf("alias %v has been updated.\n", alias)
 	case opDelete:
 		err = s.DeleteAlias(ctx, alias)
 		if err != nil {
-			errf(opDelete, err)
 			return
 		}
 		log.Printf("alias %v has been deleted.\n", alias)
 	case opFetch:
-		r, err := s.FetchAlias(ctx, alias)
+		var r string
+		r, err = s.FetchAlias(ctx, alias)
 		if err != nil {
-			errf(opFetch, err)
 			return
 		}
 		log.Println(r)
@@ -118,6 +119,7 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (retErr error
 // sHandler redirects ...
 func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	var err error
 	defer func() {
 		if err != nil {
@@ -128,6 +130,7 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/404.html", http.StatusTemporaryRedirect)
 		}
 	}()
+
 	alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, conf.S.Prefix), "/")
 	if alias == "" {
 		err = s.stats(ctx, w)

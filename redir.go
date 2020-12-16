@@ -22,6 +22,22 @@ var (
 	link     = flag.String("l", "", "actual link for the alias, optional for delete/fetch")
 )
 
+func usage() {
+	fmt.Fprintf(os.Stderr,
+		`usage: redir [-s] [-f <file>] [-op <operator> -a <alias> -l <link>]
+options:
+`)
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, `
+examples:
+redir -s                  run the redir service
+redir -f ./import.yml     import aliases from a file
+redir -a alias -l link    allocate new short link if possible
+redir -op fetch -a alias  fetch alias information
+`)
+	os.Exit(2)
+}
+
 func main() {
 	log.SetPrefix(conf.Log)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -34,13 +50,13 @@ func main() {
 	}
 
 	if *daemon {
-		processServer()
+		runServer()
 		return
 	}
-	processCmd()
+	runCmd()
 }
 
-func processServer() {
+func runServer() {
 	s := newServer(context.Background())
 	s.registerHandler()
 	log.Printf("serving %s\n", conf.Addr)
@@ -49,21 +65,7 @@ func processServer() {
 	}
 }
 
-func usage() {
-	fmt.Fprintf(os.Stderr, `usage: redir [-s] [-f <file>] [-op <operator> -a <alias> -l <link>]
-options:
-`)
-	flag.PrintDefaults()
-	fmt.Fprintf(os.Stderr, `example:
-redir -s                  run the redir service
-redir -f ./import.yml       import aliases from a file
-redir -a alias -l link    allocate new short link if possible
-redir -op fetch -a alias  fetch alias information
-`)
-	os.Exit(2)
-}
-
-func processCmd() {
+func runCmd() {
 	if *fromfile != "" {
 		shortFile(*fromfile)
 		return

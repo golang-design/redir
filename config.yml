@@ -18,12 +18,4 @@ x:
   import_path: golang.design/x/*
   repo_path: https://github.com/golang-design/*
   godoc_host: https://pkg.go.dev/
-google_analytics: |
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-80889616-4"></script>
-  <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'UA-80889616-4');
-  </script>
+google_analytics: UA-80889616-4
