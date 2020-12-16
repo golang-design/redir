@@ -125,7 +125,8 @@ func TestAtomicUpdate(t *testing.T) {
 			defer wg.Done()
 			err := s.countVisit(ctx, "alias", 1, 1)
 			if err != nil {
-				t.Fatalf("countVisit failure, err: %v\n", err)
+				t.Errorf("countVisit failure, err: %v\n", err)
+				return
 			}
 		}()
 	}
