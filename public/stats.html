@@ -1,7 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  {{ .GoogleAnalytics }}
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ .GoogleAnalytics }}"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ .GoogleAnalytics }}');
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{.Title}}</title>
@@ -67,7 +74,7 @@
     {{range .Records}}
     <tr>
       <td>{{ .PV }}/{{ .UV }}</td>
-      <td><a href="{{ $.Host }}/s/{{ .Alias }}">{{ $.Host }}/s/{{ .Alias }}</a></td>
+      <td><a href="{{ $.Host }}{{ $.Prefix }}{{ .Alias }}">{{ $.Host }}{{ $.Prefix }}{{ .Alias }}</a></td>
     </tr>
     {{end}}
   </table>

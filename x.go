@@ -7,7 +7,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 )
@@ -17,7 +16,7 @@ type x struct {
 	VCS             string
 	VCSRoot         string
 	Suffix          string
-	GoogleAnalytics template.HTML
+	GoogleAnalytics string
 }
 
 // xHandler redirect returns an HTTP handler that redirects requests for
@@ -71,7 +70,7 @@ func (s *server) xHandler(vcs, importPath, repoPath string) http.Handler {
 			VCS:             vcs,
 			VCSRoot:         repoRoot,
 			Suffix:          suffix,
-			GoogleAnalytics: template.HTML(conf.GoogleAnalytics),
+			GoogleAnalytics: conf.GoogleAnalytics,
 		}
 		var buf bytes.Buffer
 		err := xTmpl.Execute(&buf, d)

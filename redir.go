@@ -33,6 +33,7 @@ examples:
 redir -s                  run the redir service
 redir -f ./import.yml     import aliases from a file
 redir -a alias -l link    allocate new short link if possible
+redir -l link             allocate a random alias for the given link if possible
 redir -op fetch -a alias  fetch alias information
 `)
 	os.Exit(2)
@@ -77,12 +78,12 @@ func runCmd() {
 	}
 
 	switch o := op(*operate); o {
-	case opCreate, opUpdate:
-		if *alias == "" || *link == "" {
+	case opCreate:
+		if *link == "" {
 			flag.Usage()
 			return
 		}
-	case opDelete, opFetch:
+	case opUpdate, opDelete, opFetch:
 		if *alias == "" {
 			flag.Usage()
 			return

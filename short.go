@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
@@ -46,25 +45,43 @@ func (o op) valid() bool {
 	}
 }
 
+type importf struct {
+	Short  map[string]string `yaml:"short"`
+	Random []string          `yaml:"random"`
+}
+
 func shortFile(fname string) {
 	b, err := ioutil.ReadFile(fname)
 	if err != nil {
 		log.Fatalf("cannot read import file, err: %v\n", err)
 	}
 
-	d := map[string]string{}
+	var d importf
 	err = yaml.Unmarshal(b, &d)
 	if err != nil {
 		log.Fatalf("cannot unmarshal the imported file, err: %v\n", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	for alias, link := range d {
+	for alias, link := range d.Short {
 		err = shortCmd(ctx, opUpdate, alias, link)
 		if err != nil {
 			err = shortCmd(ctx, opCreate, alias, link)
 			if err != nil {
-				log.Fatalf("cannot import alias %v, err: %v\n", alias, err)
+				log.Printf("cannot import alias %v, err: %v\n", alias, err)
+			}
+		}
+	}
+	for _, link := range d.Random {
+		err = shortCmd(ctx, opUpdate, "", link)
+		if err != nil {
+			for i := 0; i < 10; i++ { // try 10x maximum
+				err = shortCmd(ctx, opCreate, "", link)
+				if err != nil {
+					log.Printf("cannot create alias %v, err: %v\n", alias, err)
+					continue
+				}
+				break
 			}
 		}
 	}
@@ -88,11 +105,30 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 
 	switch operate {
 	case opCreate:
-		err = s.StoreAlias(ctx, alias, link)
+		kind := kindShort
+		if alias == "" {
+			// This might conflict with existing ones, it should be fine
+			// at the moment, the user of redir can always the command twice.
+			if conf.R.Length <= 0 {
+				conf.R.Length = 6
+			}
+			alias = RandomString(conf.R.Length)
+			kind = kindRandom
+		}
+		err = s.StoreAlias(ctx, alias, link, kind)
 		if err != nil {
 			return
 		}
-		log.Printf("alias %v has been created.\n", alias)
+		log.Printf("alias %v has been created:\n", alias)
+
+		var prefix string
+		switch kind {
+		case kindShort:
+			prefix = conf.S.Prefix
+		case kindRandom:
+			prefix = conf.R.Prefix
+		}
+		fmt.Printf("%s%s%s\n", conf.Host, prefix, alias)
 	case opUpdate:
 		err = s.UpdateAlias(ctx, alias, link)
 		if err != nil {
@@ -116,47 +152,57 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 	return
 }
 
-// sHandler redirects the current request to a known link if the alias
-// is found in the redir store.
-func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+// shortHandler redirects the current request to a known link if the alias is
+// found in the redir store.
+func (s *server) shortHandler(kind aliasKind) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
 
-	var err error
-	defer func() {
-		if err != nil {
-			// Just tell the user we could not find the record rather than
-			// throw 50x. The server should be able to identify the issue.
-			log.Printf("stats err: %v\n", err)
-			// Use 307 redirect to 404 page
-			http.Redirect(w, r, "/404.html", http.StatusTemporaryRedirect)
-		}
-	}()
-
-	// statistic page
-	alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, conf.S.Prefix), "/")
-	if alias == "" {
-		err = s.stats(ctx, w)
-		return
-	}
-
-	// figure out redirect location
-	url, ok := s.cache.Get(alias)
-	if !ok {
-		url, err = s.checkdb(ctx, alias)
-		if err != nil {
-			url, err = s.checkvcs(ctx, alias)
+		var err error
+		defer func() {
 			if err != nil {
-				return
+				// Just tell the user we could not find the record rather than
+				// throw 50x. The server should be able to identify the issue.
+				log.Printf("stats err: %v\n", err)
+				// Use 307 redirect to 404 page
+				http.Redirect(w, r, "/404.html", http.StatusTemporaryRedirect)
 			}
+		}()
+
+		// statistic page
+		var prefix string
+		switch kind {
+		case kindShort:
+			prefix = conf.S.Prefix
+		case kindRandom:
+			prefix = conf.R.Prefix
 		}
-		s.cache.Put(alias, url)
+
+		alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, prefix), "/")
+		if alias == "" {
+			err = s.stats(ctx, kind, w)
+			return
+		}
+
+		// figure out redirect location
+		url, ok := s.cache.Get(alias)
+		if !ok {
+			url, err = s.checkdb(ctx, alias)
+			if err != nil {
+				url, err = s.checkvcs(ctx, alias)
+				if err != nil {
+					return
+				}
+			}
+			s.cache.Put(alias, url)
+		}
+
+		// redirect the user immediate, but run pv/uv count in background
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+		// count visit in another goroutine so it won't block the redirect.
+		go func() { s.visitCh <- visit{s.readIP(r), alias} }()
 	}
-
-	// redirect the user immediate, but run pv/uv count in background
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-
-	// count visit in another goroutine so it won't block the redirect.
-	go func() { s.visitCh <- visit{s.readIP(r), alias} }()
 }
 
 // checkdb checks whether the given alias is exsited in the redir database,
@@ -200,7 +246,7 @@ func (s *server) checkvcs(ctx context.Context, alias string) (string, error) {
 	}
 
 	// store such a try path
-	err = s.db.StoreAlias(ctx, alias, tryPath)
+	err = s.db.StoreAlias(ctx, alias, tryPath, kindShort)
 	if err != nil {
 		if errors.Is(err, errExistedAlias) {
 			return s.checkdb(ctx, alias)
@@ -239,33 +285,49 @@ func (s *server) readIP(r *http.Request) string {
 type arecords struct {
 	Title           string
 	Host            string
+	Prefix          string
 	Records         []arecord
-	GoogleAnalytics template.HTML
+	GoogleAnalytics string
 }
 
-func (s *server) stats(ctx context.Context, w http.ResponseWriter) (retErr error) {
+func (s *server) stats(ctx context.Context, kind aliasKind, w http.ResponseWriter) (retErr error) {
 	aliases, retErr := s.db.Keys(ctx, prefixalias+"*")
 	if retErr != nil {
 		return
 	}
 
+	var prefix string
+	switch kind {
+	case kindShort:
+		prefix = conf.S.Prefix
+	case kindRandom:
+		prefix = conf.R.Prefix
+	}
+
 	ars := arecords{
 		Title:           conf.Title,
 		Host:            conf.Host,
-		Records:         make([]arecord, len(aliases)),
-		GoogleAnalytics: template.HTML(conf.GoogleAnalytics),
+		Prefix:          prefix,
+		Records:         []arecord{},
+		GoogleAnalytics: conf.GoogleAnalytics,
 	}
-	for i, a := range aliases {
+	for _, a := range aliases {
 		raw, err := s.db.Fetch(ctx, a)
 		if err != nil {
 			retErr = err
 			return
 		}
-		err = json.Unmarshal(StringToBytes(raw), &ars.Records[i])
+		var record arecord
+		err = json.Unmarshal(StringToBytes(raw), &record)
 		if err != nil {
 			retErr = err
 			return
 		}
+		if record.Kind != kind {
+			continue
+		}
+
+		ars.Records = append(ars.Records, record)
 	}
 
 	sort.Slice(ars.Records, func(i, j int) bool {

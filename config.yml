@@ -12,6 +12,9 @@ backup_dir: ./data/backup
 log: "golang.design/redir: "
 s:
   prefix: /s/
+r:
+  length: 6
+  prefix: /r/
 x:
   prefix: /x/
   vcs: git

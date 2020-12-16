@@ -72,7 +72,8 @@ func (s *server) registerHandler() {
 	})
 
 	// short redirector
-	http.HandleFunc(conf.S.Prefix, s.sHandler)
+	http.HandleFunc(conf.S.Prefix, s.shortHandler(kindShort))
+	http.HandleFunc(conf.R.Prefix, s.shortHandler(kindRandom))
 	// repo redirector
 	http.Handle(conf.X.Prefix, s.xHandler(conf.X.VCS, conf.X.ImportPath, conf.X.RepoPath))
 }

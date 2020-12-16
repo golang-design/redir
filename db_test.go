@@ -20,7 +20,7 @@ func prepare(ctx context.Context, t *testing.T) *store {
 		t.Fatalf("cannot connect to data store")
 	}
 
-	err = s.StoreAlias(ctx, kalias, "link")
+	err = s.StoreAlias(ctx, kalias, "link", kindShort)
 	if err != nil {
 		t.Fatalf("cannot store alias to data store, err: %v\n", err)
 	}

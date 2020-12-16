@@ -23,10 +23,18 @@ var (
 	errExistedAlias = errors.New("alias is existed")
 )
 
+type aliasKind int
+
+const (
+	kindShort aliasKind = iota
+	kindRandom
+)
+
 // arecord indicates an alias record that stores an short alias
 // in data store with statistics regarding its UVs and PVs.
 type arecord struct {
 	Alias     string    `json:"alias"`
+	Kind      aliasKind `json:"kind"`
 	URL       string    `json:"url"`
 	UV        uint64    `json:"uv"`
 	PV        uint64    `json:"pv"`
@@ -69,9 +77,9 @@ func (s *store) Close() (err error) {
 }
 
 // StoreAlias stores a given short alias with the given link if not exists
-func (s *store) StoreAlias(ctx context.Context, a, l string) (err error) {
+func (s *store) StoreAlias(ctx context.Context, a, l string, kind aliasKind) (err error) {
 	b, err := json.Marshal(&arecord{
-		URL: l, Alias: a, PV: 0, UV: 0,
+		URL: l, Kind: kind, Alias: a, PV: 0, UV: 0,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	})

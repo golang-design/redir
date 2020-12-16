@@ -22,13 +22,14 @@ if exist. The website itself will redirect the request to [pkg.go.dev](https://p
 There is a reserved ping router for debugging purpose `/x/.ping` which will
 give you a pong.
 
-### 2. Redirect `golang.design/s/alias`
+### 2. Redirect `golang.design/s/alias` and `golang.design/r/randstr`
 
 The served alias can be allocated by [golang.design](https://golang.design/) members.
 The current approach is to use `redir` command on the [golang.design](https://golang.design/)
 server. Here is the overview of its usage:
 
 ```
+$ redir
 usage: redir [-s] [-f <file>] [-op <operator> -a <alias> -l <link>]
 options:
   -a string
@@ -42,8 +43,9 @@ options:
   -s    run redir service
 example:
 redir -s                  run the redir service
-redir -f ./import.yml       import aliases from a file
+redir -f ./import.yml     import aliases from a file
 redir -a alias -l link    allocate new short link if possible
+redir -l link             allocate a random alias for the given link if possible
 redir -op fetch -a alias  fetch alias information
 ```
 
@@ -52,32 +54,42 @@ The command will talk to the Redis data store and issue a new allocated alias.
 For instance, the following command:
 
 ```
-redir -a changkun -l https://changkun.de
+$ redir -a changkun -l https://changkun.de
+https://golang.design/s/changkun
 ```
 
 creates a new alias under [golang.design/s/changkun](https://golang.design/s/changkun).
 
+If the `-a` is not provided, then redir command will generate a random string as an alias, but the link can only be accessed under `/r/alias`. For instance:
+
+```
+$ redir -l https://changkun.de
+https://golang.design/r/qFlKSP
+```
+
+creates a new alias under [golang.design/r/qFlKSP](https://golang.design/r/qFlKSP).
+
 Import from a YAML file is also possible, for instance:
 
 ```
-redir -f import.yml
+$ redir -f import.yml
 ```
 
 The aliases are either imported as a new alias or updated for an existing alias.
 
-Moreover, it is possible to visit [`/s`](https://golang.design/s) directly listing all exist aliases under [golang.design](https://golang.design/).
+Moreover, it is possible to visit [`/s`](https://golang.design/s) or [`/r`](https://golang.design/r) directly listing all exist aliases under [golang.design](https://golang.design/).
 
 ## Build
 
 `Makefile` defines different ways to build the service:
 
 ```bash
-make       # build native binary
-make run   # assume your local redis is running
-make build # build docker images
-make up    # run via docker-compose
-make down  # remove compose stuff
-make clean # cleanup
+$ make       # build native binary
+$ make run   # assume your local redis is running
+$ make build # build docker images
+$ make up    # run via docker-compose
+$ make down  # remove compose stuff
+$ make clean # cleanup
 ```
 
 ## Troubleshooting
