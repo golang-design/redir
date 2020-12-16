@@ -19,6 +19,10 @@ const (
 	prefixip    = "redir:ip:"
 )
 
+var (
+	errExistedAlias = errors.New("alias is existed")
+)
+
 // arecord indicates an alias record that stores an short alias
 // in data store with statistics regarding its UVs and PVs.
 type arecord struct {
@@ -81,7 +85,7 @@ func (s *store) StoreAlias(ctx context.Context, a, l string) (err error) {
 		return
 	}
 	if !ok {
-		err = errors.New("alias already exists in data store")
+		err = errExistedAlias
 		return
 	}
 	return

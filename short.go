@@ -116,7 +116,8 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 	return
 }
 
-// sHandler redirects ...
+// sHandler redirects the current request to a known link if the alias
+// is found in the redir store.
 func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -131,35 +132,24 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	// statistic page
 	alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, conf.S.Prefix), "/")
 	if alias == "" {
 		err = s.stats(ctx, w)
 		return
 	}
 
-	checkdb := func(url string) (string, error) {
-		raw, err := s.db.FetchAlias(ctx, alias)
-		if err != nil {
-			return "", err
-		}
-		c := arecord{}
-		err = json.Unmarshal(StringToBytes(raw), &c)
-		if err != nil {
-			return "", err
-		}
-		if url != c.URL {
-			s.cache.Put(alias, c.URL)
-			url = c.URL
-		}
-		return url, nil
-	}
-
+	// figure out redirect location
 	url, ok := s.cache.Get(alias)
 	if !ok {
-		url, err = checkdb(url)
+		url, err = s.checkdb(ctx, alias)
 		if err != nil {
-			return
+			url, err = s.checkvcs(ctx, alias)
+			if err != nil {
+				return
+			}
 		}
+		s.cache.Put(alias, url)
 	}
 
 	// redirect the user immediate, but run pv/uv count in background
@@ -167,6 +157,58 @@ func (s *server) sHandler(w http.ResponseWriter, r *http.Request) {
 
 	// count visit in another goroutine so it won't block the redirect.
 	go func() { s.visitCh <- visit{s.readIP(r), alias} }()
+}
+
+// checkdb checks whether the given alias is exsited in the redir database,
+// and updates the in-memory cache if
+func (s *server) checkdb(ctx context.Context, alias string) (string, error) {
+	raw, err := s.db.FetchAlias(ctx, alias)
+	if err != nil {
+		return "", err
+	}
+	c := arecord{}
+	err = json.Unmarshal(StringToBytes(raw), &c)
+	if err != nil {
+		return "", err
+	}
+	return c.URL, nil
+}
+
+// checkvcs checks whether the given alias is an repository on VCS, if so,
+// then creates a new alias and returns url of the vcs repository.
+func (s *server) checkvcs(ctx context.Context, alias string) (string, error) {
+
+	// construct the try path and make the request to vcs
+	repoPath := conf.X.RepoPath
+	if strings.HasSuffix(repoPath, "/*") {
+		repoPath = strings.TrimSuffix(repoPath, "/*")
+	}
+	tryPath := fmt.Sprintf("%s/%s", repoPath, alias)
+	resp, err := http.Get(tryPath)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusMovedPermanently {
+		return "", fmt.Errorf("%s is not a repository", tryPath)
+	}
+
+	// figure out the new location
+	if resp.StatusCode == http.StatusMovedPermanently {
+		tryPath = resp.Header.Get("Location")
+	}
+
+	// store such a try path
+	err = s.db.StoreAlias(ctx, alias, tryPath)
+	if err != nil {
+		if errors.Is(err, errExistedAlias) {
+			return s.checkdb(ctx, alias)
+		}
+		return "", err
+	}
+
+	return tryPath, nil
 }
 
 // readIP implements a best effort approach to return the real client IP,
