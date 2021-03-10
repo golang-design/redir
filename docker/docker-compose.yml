@@ -3,40 +3,28 @@
 # by a MIT license that can be found in the LICENSE file.
 
 version: "3"
-
 services:
   redir:
-    container_name: redir
     restart: always
-    volumes:
-      - ../data/backup:/app/data/backup
     image: redir:latest
     environment:
-      REDIR_CONF: ./data/container.yml
-    cap_add:
-      - SYS_PTRACE # for debugging
-    ports:
-      - "9123:8080"
+      REDIR_CONF: ./data/redirconf.yml
     depends_on:
-      - redis
+      - mongo
+    deploy:
+      replicas: 1
     networks:
-      redirnet:
-        ipv4_address: 172.16.1.10
-  redis:
-    container_name: redis
-    restart: always
-    volumes:
-      - ../data/redis:/data
-    image: redis:6.0
+      - traefik_proxy
+  mongo:
+    container_name: redirdb
+    image: mongo:latest
     ports:
-      - "6379:6379"
+      - "27018:27017"
+    volumes:
+      - ./data/mongo:/data/db
+    restart: always
     networks:
-      redirnet:
-        ipv4_address: 172.16.1.11
+      - traefik_proxy
 networks:
-  redirnet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.1.0/24
+  traefik_proxy:
+    external: true
