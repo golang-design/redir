@@ -18,3 +18,8 @@
 build/
 data/redis
 data/backup
+data/mongo
+migrate/dump/ips
+migrate/dump/alias
+.idea/*
+redir
