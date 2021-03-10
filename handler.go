@@ -1,32 +1,23 @@
-// Copyright 2020 The golang.design Initiative Authors.
-// All rights reserved. Use of this source code is governed
-// by a MIT license that can be found in the LICENSE file.
+// Copyright 2021 Changkun Ou. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
 
 package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
-	"os"
-	"time"
+	"strings"
 
-	"gopkg.in/yaml.v3"
+	"golang.design/x/redir/model"
 )
 
-type visit struct {
-	ip    string
-	alias string
-}
-
 type server struct {
-	db      *store
-	cache   *lru
-	visitCh chan visit
+	db    *model.MySQLDB
+	cache *lru
 }
 
 var (
@@ -38,19 +29,14 @@ func newServer(ctx context.Context) *server {
 	xTmpl = template.Must(template.ParseFiles("public/x.html"))
 	statsTmpl = template.Must(template.ParseFiles("public/stats.html"))
 
-	db, err := newStore(conf.Store)
+	db, err := model.NewDB(conf.Store)
 	if err != nil {
-		log.Fatalf("cannot establish connection to database, err: %v", err)
+		log.Fatalf("cannot establish connection to database: %v", err)
 	}
-	s := &server{
-		db:      db,
-		cache:   newLRU(true),
-		visitCh: make(chan visit, 100),
+	return &server{
+		db:    db,
+		cache: newLRU(true),
 	}
-	go s.counting(ctx)
-	go s.backup(ctx)
-
-	return s
 }
 
 func (s *server) close() {
@@ -58,79 +44,89 @@ func (s *server) close() {
 }
 
 func (s *server) registerHandler() {
-	http.HandleFunc("/.info", func(w http.ResponseWriter, r *http.Request) {
-		b, _ := json.Marshal(struct {
-			Version   string `json:"version"`
-			GoVersion string `json:"go_version"`
-			BuildTime string `json:"build_time"`
-		}{
-			Version:   Version,
-			GoVersion: GoVersion,
-			BuildTime: BuildTime,
-		})
-		w.Write(b)
-	})
+	l := logging()
 
 	// short redirector
-	http.HandleFunc(conf.S.Prefix, s.shortHandler(kindShort))
-	http.HandleFunc(conf.R.Prefix, s.shortHandler(kindRandom))
+	http.Handle(conf.S.Prefix, l(s.shortHandler(model.KindShort)))
+	http.Handle(conf.R.Prefix, l(s.shortHandler(model.KindRandom)))
 	// repo redirector
-	http.Handle(conf.X.Prefix, s.xHandler(conf.X.VCS, conf.X.ImportPath, conf.X.RepoPath))
+	http.Handle(conf.X.Prefix, l(s.xHandler()))
 }
 
-// backup tries to backup the data store to local files.
-func (s *server) backup(ctx context.Context) {
-	if _, err := os.Stat(conf.BackupDir); os.IsNotExist(err) {
-		err := os.Mkdir(conf.BackupDir, os.ModePerm)
-		if err != nil {
-			log.Fatalf("cannot create backup directory, err: %v\n", err)
-		}
+func logging() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				log.Println(readIP(r), r.Method, r.URL.Path)
+			}()
+			next.ServeHTTP(w, r)
+		})
 	}
+}
 
-	t := time.NewTicker(time.Minute * time.Duration(conf.BackupMin))
-	log.Printf("internal backup is running...")
-	for {
-		select {
-		case <-t.C:
-			r, err := s.db.Keys(ctx, "*")
-			if err != nil {
-				log.Printf("backup failure, err: %v\n", err)
-				continue
-			}
-			if len(r) == 0 { // no keys for backup
-				continue
-			}
+// readIP implements a best effort approach to return the real client IP,
+// it parses X-Real-IP and X-Forwarded-For in order to work properly with
+// reverse-proxies such us: nginx or haproxy. Use X-Forwarded-For before
+// X-Real-Ip as nginx uses X-Real-Ip with the proxy's IP.
+//
+// This implementation is derived from gin-gonic/gin.
+func readIP(r *http.Request) string {
+	clientIP := r.Header.Get("X-Forwarded-For")
+	clientIP = strings.TrimSpace(strings.Split(clientIP, ",")[0])
+	if clientIP == "" {
+		clientIP = strings.TrimSpace(r.Header.Get("X-Real-Ip"))
+	}
+	if clientIP != "" {
+		return clientIP
+	}
+	if addr := r.Header.Get("X-Appengine-Remote-Addr"); addr != "" {
+		return addr
+	}
+	ip, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err != nil {
+		return "unknown" // use unknown to guarantee non empty string
+	}
+	return ip
+}
 
-			d := make(map[string]interface{}, len(r))
-			for _, k := range r {
-				v, err := s.db.Fetch(ctx, k)
-				if err != nil {
-					log.Printf("backup failed because of key %v, err: %v\n", k, err)
-					continue
-				}
-				var vv interface{}
-				err = json.Unmarshal(StringToBytes(v), &vv)
-				if err != nil {
-					log.Printf("backup failed because unmarshal of key %v, err: %v\n", k, err)
-					continue
-				}
-				d[k] = vv
-			}
-
-			b, err := yaml.Marshal(d)
-			if err != nil {
-				log.Printf("backup failed when converting to yaml, err: %v\n", err)
-				continue
-			}
-
-			name := fmt.Sprintf("/backup-%s.yml", time.Now().Format(time.RFC3339))
-			err = ioutil.WriteFile(conf.BackupDir+name, b, os.ModePerm)
-			if err != nil {
-				log.Printf("backup failed when saving the file, err: %v\n", err)
-				continue
-			}
-		case <-ctx.Done():
+// xHandler redirect returns an HTTP handler that redirects requests for
+// the tree rooted at importPath to pkg.go.dev pages for those import paths.
+// The redirections include headers directing `go get.` to satisfy the
+// imports by checking out code from repoPath using the configured VCS.
+func (s *server) xHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		importPath := strings.TrimSuffix(req.Host+conf.X.Prefix, "/")
+		path := strings.TrimSuffix(req.Host+req.URL.Path, "/")
+		var importRoot, repoRoot, suffix string
+		if path == importPath {
+			http.Redirect(w, req, conf.X.GoDocHost+importPath, http.StatusFound)
 			return
 		}
-	}
+		elem := path[len(importPath)+1:]
+		if i := strings.Index(elem, "/"); i >= 0 {
+			elem, suffix = elem[:i], elem[i:]
+		}
+		importRoot = importPath + "/" + elem
+		repoRoot = conf.X.RepoPath + "/" + elem
+
+		d := &struct {
+			ImportRoot      string
+			VCS             string
+			VCSRoot         string
+			Suffix          string
+			GoogleAnalytics string
+		}{
+			ImportRoot:      importRoot,
+			VCS:             conf.X.VCS,
+			VCSRoot:         repoRoot,
+			Suffix:          suffix,
+			GoogleAnalytics: conf.GoogleAnalytics,
+		}
+		w.Header().Set("Cache-Control", "public, max-age=300")
+		err := xTmpl.Execute(w, d)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	})
 }

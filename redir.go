@@ -1,6 +1,6 @@
-// Copyright 2020 The golang.design Initiative Authors.
-// All rights reserved. Use of this source code is governed
-// by a MIT license that can be found in the LICENSE file.
+// Copyright 2020 Changkun Ou. All rights reserved.
+// Use of this source code is governed by a MIT
+// license that can be found in the LICENSE file.
 
 package main
 
@@ -40,8 +40,8 @@ redir -op fetch -a alias  fetch alias information
 }
 
 func main() {
-	log.SetPrefix(conf.Log)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetPrefix("redir: ")
+	log.SetFlags(log.Lmsgprefix | log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 	flag.Usage = usage
 	flag.Parse()
 
@@ -60,7 +60,7 @@ func main() {
 func runServer() {
 	s := newServer(context.Background())
 	s.registerHandler()
-	log.Printf("serving %s\n", conf.Addr)
+	log.Printf("serving at %s\n", conf.Addr)
 	if err := http.ListenAndServe(conf.Addr, nil); err != nil {
 		log.Printf("ListenAndServe %s: %v\n", conf.Addr, err)
 	}
@@ -68,7 +68,7 @@ func runServer() {
 
 func runCmd() {
 	if *fromfile != "" {
-		shortFile(*fromfile)
+		importFile(*fromfile)
 		return
 	}
 
