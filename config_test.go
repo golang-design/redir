@@ -11,7 +11,7 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	conf.parse()
-
+	
 	// Test if all fields are filled.
 	v := reflect.ValueOf(conf)
 	for i := 0; i < v.NumField(); i++ {
