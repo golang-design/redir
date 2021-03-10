@@ -23,3 +23,4 @@ migrate/dump/ips
 migrate/dump/alias
 .idea/*
 redir
+.DS_Store
