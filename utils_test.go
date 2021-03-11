@@ -1,6 +1,9 @@
-// Copyright 2020 The golang.design Initiative Authors.
+// Copyright 2021 The golang.design Initiative Authors.
 // All rights reserved. Use of this source code is governed
 // by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
 package main
 
@@ -10,8 +13,8 @@ import (
 )
 
 func TestRandomString(t *testing.T) {
-	s1 := RandomString(12)
-	s2 := RandomString(12)
+	s1 := randstr(12)
+	s2 := randstr(12)
 	if len(s1) != 12 || len(s2) != 12 {
 		t.Fatalf("want 12 chars, got: %v, %v", len(s1), len(s2))
 	}
