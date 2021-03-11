@@ -1,4 +1,4 @@
-# Copyright 2020 The golang.design Initiative Authors.
+# Copyright 2021 The golang.design Initiative Authors.
 # All rights reserved. Use of this source code is governed
 # by a MIT license that can be found in the LICENSE file.
 
@@ -8,20 +8,20 @@ services:
     restart: always
     image: redir:latest
     environment:
-      REDIR_CONF: ./data/redirconf.yml
+      REDIR_CONF: ../data/redirconf.yml
     depends_on:
-      - mongo
+      - mysql
     deploy:
       replicas: 1
     networks:
       - traefik_proxy
-  mongo:
-    container_name: redirdb
-    image: mongo:latest
+  mysql:
+    container_name: redirdb_mysql
+    image: mysql:latest
     ports:
-      - "27018:27017"
+      - "3306:3306"
     volumes:
-      - ./data/mongo:/data/db
+      - ../data/mysql:/data/db
     restart: always
     networks:
       - traefik_proxy
