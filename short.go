@@ -1,6 +1,9 @@
-// Copyright 2021 Changkun Ou. All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
 package main
 
@@ -17,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.design/x/redir/model"
+	"golang.design/x/redir/internal/model"
 	"gopkg.in/yaml.v3"
 )
 
@@ -239,7 +242,6 @@ func (s *server) checkdb(ctx context.Context, alias string) (string, error) {
 // checkvcs checks whether the given alias is an repository on VCS, if so,
 // then creates a new alias and returns url of the vcs repository.
 func (s *server) checkvcs(ctx context.Context, alias string) (string, error) {
-
 	// construct the try path and make the request to vcs
 	repoPath := conf.X.RepoPath
 	if strings.HasSuffix(repoPath, "/*") {

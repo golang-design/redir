@@ -1,6 +1,9 @@
-// Copyright 2021 Changkun Ou. All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
 package main
 
@@ -12,7 +15,7 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.design/x/redir/model"
+	"golang.design/x/redir/internal/model"
 )
 
 type server struct {
