@@ -1,6 +1,9 @@
-// Copyright 2021 Changkun Ou. All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
 package model
 
@@ -73,7 +76,7 @@ func (db *MongoDB) UpdateAlias(ctx context.Context, a, l string) (*Redirect, err
 	return &r, nil
 }
 
-// Delete deletes a given short alias if exists
+// DeleteAlias deletes a given short alias if exists
 func (db *MongoDB) DeleteAlias(ctx context.Context, a string) (err error) {
 	col := db.cli.Database(dbname).Collection(collink)
 

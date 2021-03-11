@@ -1,3 +1,10 @@
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
+
 package model
 
 import (
@@ -69,14 +76,23 @@ type Record struct {
 type RedirModel interface {
 	NewDB(url string) (RedirModel, error)
 	Close() (err error)
+}
+
+type RedirAliasDataModel interface {
 	StoreAlias(ctx context.Context, r *Redirect) (err error)
 	UpdateAlias(ctx context.Context, a, l string) (*Redirect, error)
 	DeleteAlias(ctx context.Context, a string) (err error)
 	FetchAlias(ctx context.Context, a string) (*Redirect, error)
+}
+
+type RedirVisitDataModel interface {
+	RecordVisit(ctx context.Context, v *Visit) (err error)
+}
+
+type RedirStatModel interface {
 	CountReferer(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Refstat, error)
 	CountUA(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Uastat, error)
 	CountLocation(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]string, error)
 	CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error)
-	RecordVisit(ctx context.Context, v *Visit) (err error)
 	CountVisit(ctx context.Context, kind AliasKind) (rs []Record, err error)
 }

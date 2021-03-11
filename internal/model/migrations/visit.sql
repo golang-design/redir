@@ -1,3 +1,9 @@
+-- Copyright 2021 The golang.design Initiative Authors.
+-- All rights reserved. Use of this source code is governed
+-- by a MIT license that can be found in the LICENSE file.
+--
+-- Originally written by Mai Yang <maiyang.me>.
+
 CREATE TABLE `visit` (
     `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
     `alias` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',

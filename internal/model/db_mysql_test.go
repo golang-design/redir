@@ -1,6 +1,8 @@
-// Copyright 2021 Changkun Ou. All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Mai Yang <maiyang.me>.
 
 package model
 
@@ -16,10 +18,10 @@ import (
 var dsn = "root:dc@tcp(127.0.0.1:3306)/" + dbname + "?charset=utf8mb4&parseTime=true"
 
 func TestStoreAlias(t *testing.T) {
-	sqlxDB, err := initMySQL(dsn)
+	mySQLDB, err := NewDB(dsn)
 	require.NoError(t, err)
 	ctx := context.Background()
-	_, err = sqlxDB.ExecContext(ctx, `truncate table collink`)
+	_, err = mySQLDB.sqlxDB.ExecContext(ctx, `truncate table collink`)
 	require.NoError(t, err)
 	alias := "T1"
 	redirURL := "https://golang.design/s/talkgo"
@@ -30,13 +32,12 @@ func TestStoreAlias(t *testing.T) {
 		Private: false,
 	}
 
-	mySQLDB := MySQLDB{sqlxDB: sqlxDB}
 	err = mySQLDB.StoreAlias(ctx, red)
 	require.NoError(t, err)
 	ret, err := mySQLDB.FetchAlias(ctx, alias)
 	require.NoError(t, err)
 	require.EqualValues(t, redirURL, ret.URL)
-	ret.URL = "https://golang.design/s/xlff"
+	ret.URL = "https://golang.design/s/go-questions"
 	ret.Kind = 1
 	err = mySQLDB.UpdateAlias(ctx, ret)
 	require.NoError(t, err)
@@ -51,23 +52,22 @@ func TestStoreAlias(t *testing.T) {
 }
 
 func TestVisit(t *testing.T) {
-	sqlxDB, err := initMySQL(dsn)
+	mySQLDB, err := NewDB(dsn)
 	require.NoError(t, err)
 	ctx := context.Background()
-	_, err = sqlxDB.ExecContext(ctx, `truncate table visit`)
+	_, err = mySQLDB.sqlxDB.ExecContext(ctx, `truncate table visit`)
 	require.NoError(t, err)
 
 	now := time.Now()
 	visits := []*Visit{
-		{"t1", 1, "192.168.0.1", "ua1", "chrome", now.Add(-12 * time.Second)},
-		{"t1", 1, "192.168.0.2", "ua2", "chrome", now.Add(-10 * time.Second)},
-		{"t2", 1, "192.168.0.3", "ua2", "safari", now},
-		{"t3", 0, "192.168.0.2", "ua3", "firefox", now},
-		{"t3", 1, "192.168.0.3", "ua4", "firefox", now},
-		{"t3", 1, "192.168.0.4", "ua5", "chrome", now},
+		{"t1", 1, "192.168.0.1", "ua1", "https://example1.com", now.Add(-12 * time.Second)},
+		{"t1", 1, "192.168.0.2", "ua2", "https://example2.com", now.Add(-10 * time.Second)},
+		{"t2", 1, "192.168.0.3", "ua2", "https://example3.com", now},
+		{"t3", 0, "192.168.0.2", "ua3", "https://example4.com", now},
+		{"t3", 1, "192.168.0.3", "ua4", "https://example5.com", now},
+		{"t3", 1, "192.168.0.4", "ua5", "https://example6.com", now},
 	}
 
-	mySQLDB := MySQLDB{sqlxDB: sqlxDB}
 	for _, v := range visits {
 		err = mySQLDB.RecordVisit(ctx, v)
 		require.NoError(t, err)
