@@ -18,7 +18,7 @@
 build/
 data/redis
 data/backup
-data/mongo
+data/mysql
 migrate/dump/ips
 migrate/dump/alias
 .idea/*
