@@ -1,6 +1,9 @@
-// Copyright 2021 Changkun Ou. All rights reserved.
-// Use of this source code is governed by a MIT
-// license that can be found in the LICENSE file.
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
 package main
 
@@ -12,14 +15,14 @@ import (
 func TestLRU(t *testing.T) {
 	l := newLRU(false)
 	l.cap = 2 // for testing
-	
+
 	if _, ok := l.Get("a"); ok {
 		t.Fatalf("Get value from empty LRU")
 	}
 	if l.Len() != 0 {
 		t.Fatalf("wrong size, want 0, got %v", l.Len())
 	}
-	
+
 	l.Put("a", "1") // a
 	v, ok := l.Get("a")
 	if !ok { // a -> b
@@ -28,7 +31,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 1 {
 		t.Fatalf("wrong size, want 1, got %v", l.Len())
 	}
-	
+
 	l.Put("b", "2") // b -> a
 	v, ok = l.Get("a")
 	if !ok { // a -> b
@@ -40,7 +43,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 2 {
 		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
-	
+
 	l.Put("c", "3") // c -> a
 	_, ok = l.Get("b")
 	if ok {
@@ -56,7 +59,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 2 {
 		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
-	
+
 	l.flush()
 	if l.Len() != 0 {
 		t.Fatalf("wrong size, want 0, got %v", l.Len())
@@ -105,7 +108,7 @@ func BenchmarkLRU(b *testing.B) {
 			}
 		})
 	})
-	
+
 	// This is a very naive bench test, especially it
 	// mostly measures the rands().
 	b.Run("Put-Different", func(b *testing.B) {
