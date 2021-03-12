@@ -74,10 +74,23 @@ WHERE alias=?
 
 // DeleteAlias deletes a given short alias if exists
 func (db Store) DeleteAlias(ctx context.Context, a string) error {
+	tx, err := db.sqlxDB.Begin()
 	query, args, err := sqlx.In(`
 DELETE FROM collink WHERE alias=?
 `, a)
-	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+
+	query, args, err = sqlx.In(`
+DELETE FROM visit WHERE alias=?
+`, a)
+	_, err = tx.ExecContext(ctx, query, args...)
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
@@ -99,10 +112,10 @@ WHERE alias=?
 	if err != nil {
 		return nil, err
 	}
-	if len(red) > 0 {
-		return red[0], nil
+	if len(red) == 0 {
+		return nil, sql.ErrNoRows
 	}
-	return nil, sql.ErrNoRows
+	return red[0], nil
 }
 
 // CountReferer fetches and counts all referers of a given alias
@@ -143,10 +156,10 @@ GROUP BY ua
 	return ref, nil
 }
 
-// CountVisitHist counts the recorded history every 30 minutes from Visit history.
+// CountVisitHist counts the recorded history every an hour from Visit history.
 func (db Store) CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error) {
 	query, args, err := sqlx.In(`
-SELECT CONVERT(DATE_FORMAT(created_at,'%Y-%m-%d-%H:30:00'),DATETIME) AS time,
+SELECT CONVERT(DATE_FORMAT(created_at,'%Y-%m-%d-00:00:00'),DATETIME) AS time,
        COUNT(1) AS count
 FROM visit
 WHERE alias=?
@@ -181,11 +194,10 @@ func (db Store) CountVisit(ctx context.Context, kind AliasKind) ([]Record, error
 	query, args, err := sqlx.In(`
 SELECT alias,
        COUNT(*) pv,
-       COUNT(DISTINCT ip) uv,
-       YEARWEEK(created_at, 1) week
+       COUNT(DISTINCT ip) uv
 FROM visit
 WHERE kind = ?
-GROUP BY week, alias
+GROUP BY alias
 `, kind)
 	rs := []Record{}
 	err = db.sqlxDB.SelectContext(ctx, &rs, query, args...)

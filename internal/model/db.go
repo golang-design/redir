@@ -14,11 +14,14 @@ import (
 )
 
 var (
+	// ErrExistedAlias indicates an error where an alias is already existed in the data store.
 	ErrExistedAlias = errors.New("alias is existed")
 )
 
+// AliasKind represents the kind of an alias.
 type AliasKind int
 
+// All kinds of aliases
 const (
 	KindShort AliasKind = iota
 	KindRandom
@@ -46,26 +49,29 @@ type Visit struct {
 	Time    time.Time `json:"time"    db:"time"`
 }
 
+// Refstat counts the occurrence of a referer.
 type Refstat struct {
 	Referer string `json:"referer"`
 	Count   int64  `json:"count"`
 }
 
+// UAstat counts the occurrence of a user agent.
 type UAstat struct {
 	UA    string `json:"ua"`
 	Count int64  `json:"count"`
 }
 
+// Timehist counts the occurrence of visit events during a time period (an hour).
 type Timehist struct {
 	Time  time.Time `json:"time"`
 	Count int       `json:"count"`
 }
 
+// Record contains a record of alias's UV/PV
 type Record struct {
 	Alias string `json:"alias"`
 	UV    int64  `json:"uv"`
 	PV    int64  `json:"pv"`
-	Week  string `json:"week"`
 }
 
 type RedirAliasDataModel interface {
