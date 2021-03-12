@@ -19,7 +19,7 @@ import (
 )
 
 type server struct {
-	db    *model.MySQLDB
+	db    *model.Store
 	cache *lru
 }
 
@@ -43,7 +43,7 @@ func newServer(ctx context.Context) *server {
 }
 
 func (s *server) close() {
-	log.Println(s.db.Close())
+	log.Println(s.db.CloseStore())
 }
 
 func (s *server) registerHandler() {

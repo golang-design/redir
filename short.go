@@ -95,7 +95,12 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 		err = fmt.Errorf("cannot create a new alias: %w", err)
 		return
 	}
-	defer s.Close()
+	defer func() {
+		err = s.CloseStore()
+		if err != nil {
+			err = fmt.Errorf("cannot %v close data store: %w", operate, err)
+		}
+	}()
 
 	defer func() {
 		if err != nil {

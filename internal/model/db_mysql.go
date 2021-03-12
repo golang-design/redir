@@ -16,24 +16,26 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// MySQLDB MySQL DB struct
-type MySQLDB struct {
+// Store a store struct
+type Store struct {
 	sqlxDB *sqlx.DB
 }
 
-// NewDB new MySQLDB from uri
-func NewDB(dsn string) (*MySQLDB, error) {
+// NewDB parses a given DSN and returns a DB instance for
+// further operations. It returns an error if the database
+// instance is not able to connect.
+func NewDB(dsn string) (*Store, error) {
 	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		fmt.Printf("connect server failed, err:%v\n", err)
 		return nil, err
 	}
-	db.SetMaxOpenConns(200)
-	db.SetMaxIdleConns(10)
-	return &MySQLDB{sqlxDB: db}, nil
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(0)
+	return &Store{sqlxDB: db}, nil
 }
 
-func (db MySQLDB) Close() (err error) {
+func (db Store) CloseStore() (err error) {
 	err = db.sqlxDB.Close()
 	if err != nil {
 		err = fmt.Errorf("failed to close database: %w", err)
@@ -42,10 +44,10 @@ func (db MySQLDB) Close() (err error) {
 }
 
 // StoreAlias stores a given short alias with the given link if not exists
-func (db MySQLDB) StoreAlias(ctx context.Context, r *Redirect) (err error) {
+func (db Store) StoreAlias(ctx context.Context, r *Redirect) error {
 	now := time.Now()
 	query, args, err := sqlx.In(`
-INSERT INTO collink (ALIAS, kind, url, private, created_at, updated_at)
+INSERT INTO collink (alias, kind, url, private, created_at, updated_at)
 VALUES(?, ?, ?, ?, ?, ?)
 `, r.Alias, r.Kind, r.URL, r.Private, now, now)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
@@ -56,11 +58,11 @@ VALUES(?, ?, ?, ?, ?, ?)
 }
 
 // UpdateAlias updates the link of a given alias
-func (db MySQLDB) UpdateAlias(ctx context.Context, red *Redirect) error {
+func (db Store) UpdateAlias(ctx context.Context, red *Redirect) error {
 	query, args, err := sqlx.In(`
 UPDATE collink
 SET url=?
-WHERE ALIAS=?
+WHERE alias=?
 `, red.URL, red.Alias)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -70,11 +72,11 @@ WHERE ALIAS=?
 }
 
 // DeleteAlias deletes a given short alias if exists
-func (db MySQLDB) DeleteAlias(ctx context.Context, a string) (err error) {
+func (db Store) DeleteAlias(ctx context.Context, a string) error {
 	query, args, err := sqlx.In(`
 UPDATE collink
-SET is_deleted=TRUE
-WHERE ALIAS=?
+SET is_deleted=true
+WHERE alias=?
 `, a)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -84,7 +86,7 @@ WHERE ALIAS=?
 }
 
 // FetchAlias reads a given alias and returns the associated link
-func (db MySQLDB) FetchAlias(ctx context.Context, a string) (*Redirect, error) {
+func (db Store) FetchAlias(ctx context.Context, a string) (*Redirect, error) {
 	query, args, err := sqlx.In(`
 SELECT alias,
        kind,
@@ -92,7 +94,7 @@ SELECT alias,
        private
 FROM collink
 WHERE alias=?
-  AND is_deleted=FALSE
+  AND is_deleted=false
 `, a)
 	red := []*Redirect{}
 	err = db.sqlxDB.SelectContext(ctx, &red, query, args...)
@@ -106,7 +108,7 @@ WHERE alias=?
 }
 
 // CountReferer fetches and counts all referers of a given alias
-func (db MySQLDB) CountReferer(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Refstat, error) {
+func (db Store) CountReferer(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Refstat, error) {
 	query, args, err := sqlx.In(`
 SELECT referer,
        COUNT(*) AS count
@@ -126,18 +128,17 @@ GROUP BY referer
 }
 
 // CountUA fetches and counts all uas of a given alias
-func (db MySQLDB) CountUA(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Uastat, error) {
+func (db Store) CountUA(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]UAstat, error) {
 	query, args, err := sqlx.In(`
 SELECT ua,
        COUNT(*) AS count
 FROM visit
 WHERE alias=?
   AND kind = ?
-  AND is_deleted=FALSE
   AND created_at BETWEEN ? AND ?
 GROUP BY ua
 `, a, k, start, end)
-	ref := []Uastat{}
+	ref := []UAstat{}
 	err = db.sqlxDB.SelectContext(ctx, &ref, query, args...)
 	if err != nil {
 		return nil, err
@@ -149,13 +150,12 @@ GROUP BY ua
 // FIXME: IP can be changed overtime, it might be a good idea to just store
 // the parse geo location (latitude, and longitude, and accuracy).
 // Q: Any APIs can convert IP to geo location?
-func (db MySQLDB) CountLocation(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]string, error) {
+func (db Store) CountLocation(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]string, error) {
 	query, args, err := sqlx.In(`
 SELECT ip
 FROM visit
 WHERE alias=?
   AND kind = ?
-  AND is_deleted=FALSE
   AND created_at BETWEEN ? AND ?
 `, a, k, start, end)
 	locs := []string{}
@@ -167,14 +167,13 @@ WHERE alias=?
 }
 
 // CountVisitHist counts the recorded history every 30 minutes from Visit history.
-func (db MySQLDB) CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error) {
+func (db Store) CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error) {
 	query, args, err := sqlx.In(`
 SELECT CONVERT(DATE_FORMAT(created_at,'%Y-%m-%d-%H:30:00'),DATETIME) AS time,
        COUNT(1) AS count
 FROM visit
 WHERE alias=?
   AND kind = ?
-  AND is_deleted=FALSE
   AND created_at BETWEEN ? AND ?
 GROUP BY time
 ORDER BY time
@@ -188,12 +187,12 @@ ORDER BY time
 }
 
 // RecordVisit record a given visit data
-func (db MySQLDB) RecordVisit(ctx context.Context, v *Visit) (err error) {
+func (db Store) RecordVisit(ctx context.Context, v *Visit) error {
 	now := time.Now()
 	query, args, err := sqlx.In(`
-INSERT INTO visit (alias, kind, ip, ua, referer, created_at, updated_at)
-VALUES(?, ?, ?, ?, ?, ?, ?)
-`, v.Alias, v.Kind, v.IP, v.UA, v.Referer, now, now)
+INSERT INTO visit (alias, kind, ip, ua, referer, created_at)
+VALUES(?, ?, ?, ?, ?, ?)
+`, v.Alias, v.Kind, v.IP, v.UA, v.Referer, now)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -202,16 +201,17 @@ VALUES(?, ?, ?, ?, ?, ?, ?)
 }
 
 // CountVisit count visit by AliasKind
-func (db MySQLDB) CountVisit(ctx context.Context, kind AliasKind) (rs []Record, err error) {
+func (db Store) CountVisit(ctx context.Context, kind AliasKind) ([]Record, error) {
 	query, args, err := sqlx.In(`
 SELECT alias,
        COUNT(*) pv,
-       COUNT(DISTINCT ip) uv
+       COUNT(DISTINCT ip) uv,
+       YEARWEEK(created_at, 1) week
 FROM visit
 WHERE kind = ?
-  AND is_deleted=FALSE
-GROUP BY alias
+GROUP BY week, alias
 `, kind)
+	rs := []Record{}
 	err = db.sqlxDB.SelectContext(ctx, &rs, query, args...)
 	if err != nil {
 		return nil, err

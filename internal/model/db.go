@@ -25,74 +25,68 @@ const (
 )
 
 const (
-	dbname   = "redir"
-	collink  = "links"
-	colvisit = "Visit"
+	dbname = "redir"
 )
 
 // Redirect records a kind of alias and its correlated link.
 type Redirect struct {
-	Alias   string    `json:"alias"   bson:"alias"`
-	Kind    AliasKind `json:"kind"    bson:"kind"`
-	URL     string    `json:"url"     bson:"url"`
-	Private bool      `json:"private" bson:"private"`
+	Alias   string    `json:"alias"   db:"alias"`
+	Kind    AliasKind `json:"kind"    db:"kind"`
+	URL     string    `json:"url"     db:"url"`
+	Private bool      `json:"private" db:"private"`
 }
 
 // Visit indicates an Record of Visit pattern.
 type Visit struct {
-	Alias   string    `json:"alias"   bson:"alias"`
-	Kind    AliasKind `json:"kind"    bson:"kind"`
-	IP      string    `json:"ip"      bson:"ip"`
-	UA      string    `json:"ua"      bson:"ua"`
-	Referer string    `json:"referer" bson:"referer"`
-	Time    time.Time `json:"time"    bson:"time"`
+	Alias   string    `json:"alias"   db:"alias"`
+	Kind    AliasKind `json:"kind"    db:"kind"`
+	IP      string    `json:"ip"      db:"ip"`
+	UA      string    `json:"ua"      db:"ua"`
+	Referer string    `json:"referer" db:"referer"`
+	Time    time.Time `json:"time"    db:"time"`
 }
 
 type Refstat struct {
-	Referer string `json:"referer" bson:"referer"`
-	Count   int64  `json:"count"   bson:"count"`
+	Referer string `json:"referer" db:"referer"`
+	Count   int64  `json:"count"   db:"count"`
 }
 
-type Uastat struct {
-	UA    string `json:"ua"    bson:"ua"`
-	Count int64  `json:"count" bson:"count"`
+type UAstat struct {
+	UA    string `json:"ua"    db:"ua"`
+	Count int64  `json:"count" db:"count"`
 }
 
 type Locstat struct {
-	Locations []string `bson:"locs" json:"locs"`
+	Locations []string `db:"locs" json:"locs"`
 }
 
 type Timehist struct {
-	Time  time.Time `bson:"time"  json:"time"`
-	Count int       `bson:"count" json:"count"`
+	Time  time.Time `db:"time"  json:"time"`
+	Count int       `db:"count" json:"count"`
 }
 
 type Record struct {
-	Alias string `bson:"alias"`
-	UV    int64  `bson:"uv"`
-	PV    int64  `bson:"pv"`
-}
-
-type RedirModel interface {
-	NewDB(url string) (RedirModel, error)
-	Close() (err error)
+	Alias string `db:"alias"`
+	UV    int64  `db:"uv"`
+	PV    int64  `db:"pv"`
+	Week  string `db:"week"`
 }
 
 type RedirAliasDataModel interface {
-	StoreAlias(ctx context.Context, r *Redirect) (err error)
-	UpdateAlias(ctx context.Context, a, l string) (*Redirect, error)
-	DeleteAlias(ctx context.Context, a string) (err error)
-	FetchAlias(ctx context.Context, a string) (*Redirect, error)
+	StoreAlias(context.Context, *Redirect) error
+	UpdateAlias(ctx context.Context, red *Redirect) error
+	DeleteAlias(ctx context.Context, alias string) error
+	FetchAlias(ctx context.Context, alias string) (*Redirect, error)
 }
 
 type RedirVisitDataModel interface {
-	RecordVisit(ctx context.Context, v *Visit) (err error)
+	RecordVisit(context.Context, *Visit) error
 }
 
 type RedirStatModel interface {
-	CountReferer(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Refstat, error)
-	CountUA(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Uastat, error)
-	CountLocation(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]string, error)
-	CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error)
-	CountVisit(ctx context.Context, kind AliasKind) (rs []Record, err error)
+	CountReferer(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Refstat, error)
+	CountUA(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]UAstat, error)
+	CountLocation(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]string, error)
+	CountVisitHist(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Timehist, error)
+	CountVisit(context.Context, AliasKind) (rs []Record, err error)
 }
