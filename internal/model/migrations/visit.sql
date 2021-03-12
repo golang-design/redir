@@ -12,7 +12,5 @@ CREATE TABLE `visit` (
     `ua` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `referer` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `created_at` datetime NOT NULL,
-    `updated_at` datetime NOT NULL,
-    `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
