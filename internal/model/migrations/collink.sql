@@ -12,7 +12,6 @@ CREATE TABLE `collink` (
     `private` tinyint(1) NOT NULL DEFAULT '0',
     `created_at` datetime DEFAULT NULL,
     `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-    `is_deleted` tinyint(4) NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uidx_alias` (`alias`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
