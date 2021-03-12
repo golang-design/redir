@@ -16,7 +16,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Store a store struct
+// Store is persistent storage that provides a group of operations
+// to interact with the underlying database.
 type Store struct {
 	sqlxDB *sqlx.DB
 }
@@ -30,12 +31,12 @@ func NewDB(dsn string) (*Store, error) {
 		fmt.Printf("connect server failed, err:%v\n", err)
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(0)
+	db.SetMaxOpenConns(120)
+	db.SetMaxIdleConns(50)
 	return &Store{sqlxDB: db}, nil
 }
 
-func (db Store) CloseStore() (err error) {
+func (db Store) Close() (err error) {
 	err = db.sqlxDB.Close()
 	if err != nil {
 		err = fmt.Errorf("failed to close database: %w", err)
@@ -45,7 +46,7 @@ func (db Store) CloseStore() (err error) {
 
 // StoreAlias stores a given short alias with the given link if not exists
 func (db Store) StoreAlias(ctx context.Context, r *Redirect) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	query, args, err := sqlx.In(`
 INSERT INTO collink (alias, kind, url, private, created_at, updated_at)
 VALUES(?, ?, ?, ?, ?, ?)
@@ -74,9 +75,7 @@ WHERE alias=?
 // DeleteAlias deletes a given short alias if exists
 func (db Store) DeleteAlias(ctx context.Context, a string) error {
 	query, args, err := sqlx.In(`
-UPDATE collink
-SET is_deleted=true
-WHERE alias=?
+DELETE FROM collink WHERE alias=?
 `, a)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -94,7 +93,6 @@ SELECT alias,
        private
 FROM collink
 WHERE alias=?
-  AND is_deleted=false
 `, a)
 	red := []*Redirect{}
 	err = db.sqlxDB.SelectContext(ctx, &red, query, args...)
@@ -115,7 +113,6 @@ SELECT referer,
 FROM visit
 WHERE alias=?
   AND kind = ?
-  AND is_deleted=FALSE
   AND created_at BETWEEN ? AND ?
 GROUP BY referer
 `, a, k, start, end)
@@ -146,26 +143,6 @@ GROUP BY ua
 	return ref, nil
 }
 
-// CountLocation counts the recorded IPs from Visit history.
-// FIXME: IP can be changed overtime, it might be a good idea to just store
-// the parse geo location (latitude, and longitude, and accuracy).
-// Q: Any APIs can convert IP to geo location?
-func (db Store) CountLocation(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]string, error) {
-	query, args, err := sqlx.In(`
-SELECT ip
-FROM visit
-WHERE alias=?
-  AND kind = ?
-  AND created_at BETWEEN ? AND ?
-`, a, k, start, end)
-	locs := []string{}
-	err = db.sqlxDB.SelectContext(ctx, &locs, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	return locs, nil
-}
-
 // CountVisitHist counts the recorded history every 30 minutes from Visit history.
 func (db Store) CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error) {
 	query, args, err := sqlx.In(`
@@ -188,11 +165,10 @@ ORDER BY time
 
 // RecordVisit record a given visit data
 func (db Store) RecordVisit(ctx context.Context, v *Visit) error {
-	now := time.Now()
 	query, args, err := sqlx.In(`
 INSERT INTO visit (alias, kind, ip, ua, referer, created_at)
 VALUES(?, ?, ?, ?, ?, ?)
-`, v.Alias, v.Kind, v.IP, v.UA, v.Referer, now)
+`, v.Alias, v.Kind, v.IP, v.UA, v.Referer, v.Time)
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err

@@ -43,7 +43,7 @@ func newServer(ctx context.Context) *server {
 }
 
 func (s *server) close() {
-	log.Println(s.db.CloseStore())
+	log.Println(s.db.Close())
 }
 
 func (s *server) registerHandler() {

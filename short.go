@@ -96,7 +96,7 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 		return
 	}
 	defer func() {
-		err = s.CloseStore()
+		err = s.Close()
 		if err != nil {
 			err = fmt.Errorf("cannot %v close data store: %w", operate, err)
 		}
@@ -390,19 +390,6 @@ func (s *server) statData(
 		}
 		w.Write(b)
 		return
-	case "loc":
-		locations, err := s.db.CountLocation(ctx, a, k, start, end)
-		if err != nil {
-			retErr = err
-			return
-		}
-		b, err := json.Marshal(locations)
-		if err != nil {
-			retErr = err
-			return
-		}
-		w.Write(b)
-		return err
 	case "time":
 		hist, err := s.db.CountVisitHist(ctx, a, k, start, end)
 		if err != nil {

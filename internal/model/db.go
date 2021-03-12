@@ -47,29 +47,25 @@ type Visit struct {
 }
 
 type Refstat struct {
-	Referer string `json:"referer" db:"referer"`
-	Count   int64  `json:"count"   db:"count"`
+	Referer string `json:"referer"`
+	Count   int64  `json:"count"`
 }
 
 type UAstat struct {
-	UA    string `json:"ua"    db:"ua"`
-	Count int64  `json:"count" db:"count"`
-}
-
-type Locstat struct {
-	Locations []string `db:"locs" json:"locs"`
+	UA    string `json:"ua"`
+	Count int64  `json:"count"`
 }
 
 type Timehist struct {
-	Time  time.Time `db:"time"  json:"time"`
-	Count int       `db:"count" json:"count"`
+	Time  time.Time `json:"time"`
+	Count int       `json:"count"`
 }
 
 type Record struct {
-	Alias string `db:"alias"`
-	UV    int64  `db:"uv"`
-	PV    int64  `db:"pv"`
-	Week  string `db:"week"`
+	Alias string `json:"alias"`
+	UV    int64  `json:"uv"`
+	PV    int64  `json:"pv"`
+	Week  string `json:"week"`
 }
 
 type RedirAliasDataModel interface {
@@ -86,7 +82,6 @@ type RedirVisitDataModel interface {
 type RedirStatModel interface {
 	CountReferer(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Refstat, error)
 	CountUA(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]UAstat, error)
-	CountLocation(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]string, error)
 	CountVisitHist(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Timehist, error)
 	CountVisit(context.Context, AliasKind) (rs []Record, err error)
 }

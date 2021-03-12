@@ -47,7 +47,7 @@ func TestStoreAlias(t *testing.T) {
 	err = mySQLDB.DeleteAlias(ctx, alias)
 	require.NoError(t, err)
 	ret, err = mySQLDB.FetchAlias(ctx, alias)
-	require.NoError(t, err)
+	require.Error(t, err)
 	require.Nil(t, ret)
 }
 
@@ -79,10 +79,6 @@ func TestVisit(t *testing.T) {
 	uast, err := mySQLDB.CountUA(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
 	require.NoError(t, err)
 	require.Len(t, uast, 1)
-
-	locst, err := mySQLDB.CountLocation(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
-	require.NoError(t, err)
-	require.Len(t, locst, 1)
 
 	cvhst, err := mySQLDB.CountVisitHist(ctx, "t2", 1, now.Add(-10*time.Second), now.Add(1*time.Second))
 	require.NoError(t, err)
