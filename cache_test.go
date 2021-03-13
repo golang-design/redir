@@ -31,6 +31,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 1 {
 		t.Fatalf("wrong size, want 1, got %v", l.Len())
 	}
+	t.Log(v)
 
 	l.Put("b", "2") // b -> a
 	v, ok = l.Get("a")
@@ -43,6 +44,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 2 {
 		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
+	t.Log(v)
 
 	l.Put("c", "3") // c -> a
 	_, ok = l.Get("b")
@@ -59,6 +61,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 2 {
 		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
+	t.Log(v)
 
 	l.flush()
 	if l.Len() != 0 {
@@ -78,6 +81,7 @@ func TestLRU(t *testing.T) {
 	if l.Len() != 2 {
 		t.Fatalf("wrong size, want 2, got %v", l.Len())
 	}
+	t.Log(v)
 }
 
 func rands() string {

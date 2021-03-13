@@ -6,8 +6,7 @@
 title: "The golang.design Initiative"
 host: https://golang.design
 addr: :9123
-store: root:dc@tcp(127.0.0.1:3306)/redir?charset=utf8mb4&parseTime=true
-log: "golang.design/redir: "
+store: root:root@tcp(127.0.0.1:3306)/redir?charset=utf8mb4&parseTime=true
 s:
   prefix: /s/
 r:

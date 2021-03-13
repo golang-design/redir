@@ -49,6 +49,7 @@ func (c *config) parse() {
 		if d == nil {
 			log.Fatalf("cannot read configuration: %v\n", err)
 		}
+		log.Println("read default configuration")
 	}
 	err = yaml.Unmarshal(d, c)
 	if err != nil {

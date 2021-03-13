@@ -1,30 +1,24 @@
 # redir
 
-a request redirector that is dedicated for golang.design
+a request redirector
 
-## Design Purpose
+## Usage
 
-The current `redir` implementation talks to a redis data store for PV/UV counting,
-as well as short alias storage. In the booting phase, it will read `REDIR_CONF`
-from environment variable to identify configuration file (default: [`./config.yml`](./config.yml)).
+The current `redir` implmenets the following features:
 
-`redir` is designed for the following purpose: serve two major
-redirectors `/s` and `/x` (at the moment).
+- Link shortener: shorten links under `/s` and `/r`
+- Go [Vanity Import](https://golang.org/cmd/go/#hdr-Remote_import_paths): redirect domain/x to configured VCS and pkg.go.dev for API documentation
+- PV/UV timeline, visitor referer, devices visualization
 
-### 1. Redirect `golang.design/x/pkg` to the `pkg`'s actual VCS.
 
-This is based on the `go get` vanity import path convention. With this
-feature, all packages issued by [golang.design](https://golang.design) 
-requires to use `golang.design/x/` import path.
-That is saying, any `pkg` will be redirected to `github.com/golang-design/pkg`
-if exist. The website itself will redirect the request to [pkg.go.dev](https://pkg.go.dev).
+The [default configuration](./config.yml) is embedded into the binary.
 
-There is a reserved ping router for debugging purpose `/x/.ping` which will
-give you a pong.
+Alternative configuration can be used to replace default config and
+specified in environtment variable REDIR_CONF, for example
+`REDIR_CONF=/path/to/config.yml redir -s` to run the redir server under
+given configuration.
 
-### 2. Redirect `golang.design/s/alias` and `golang.design/r/randstr`
-
-The served alias can be allocated by [golang.design](https://golang.design/) members.
+**The served alias can only be allocated by [golang.design](https://golang.design/) members.**
 The current approach is to use `redir` command on the [golang.design](https://golang.design/)
 server. Here is the overview of its usage:
 
@@ -41,7 +35,8 @@ options:
   -op string
         operators, create/update/delete/fetch (default "create")
   -s    run redir service
-example:
+
+examples:
 redir -s                  run the redir service
 redir -f ./import.yml     import aliases from a file
 redir -a alias -l link    allocate new short link if possible

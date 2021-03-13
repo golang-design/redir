@@ -44,11 +44,8 @@ func newLRU(doexpire bool) *lru {
 // not synced.
 func (l *lru) clear() {
 	t := time.NewTicker(time.Minute * 5)
-	for {
-		select {
-		case <-t.C:
-			l.flush()
-		}
+	for range t.C {
+		l.flush()
 	}
 }
 
@@ -102,5 +99,4 @@ func (l *lru) Put(k, v string) {
 	} else {
 		l.size++
 	}
-	return
 }

@@ -3,23 +3,22 @@
 # by a MIT license that can be found in the LICENSE file.
 
 VERSION = $(shell git describe --always --tags)
-IMAGE = redir
-BINARY = redir
-TARGET = -o $(BINARY)
-BUILD_FLAGS = $(TARGET) -mod=vendor
+NAME = redir
+BUILD_FLAGS = -o $(NAME) -mod=vendor
 
 all:
 	go build $(BUILD_FLAGS)
 run:
-	./$(BINARY) -s
+	./$(NAME) -s
 build:
 	CGO_ENABLED=0 GOOS=linux go build $(BUILD_FLAGS)
-	docker build -t $(IMAGE):latest .
+	docker build -f docker/Dockerfile -t $(NAME):latest .
 up:
-	docker-compose up -d
+	docker-compose -f docker/docker-compose.yml up -d
 down:
-	docker-compose down
+	docker-compose -f docker/docker-compose.yml down
 clean:
-	rm -rf $(BINARY)
+	rm -rf $(NAME)
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
-	docker rmi -f $(IMAGE):latest 2> /dev/null; true
+	docker rmi -f $(NAME):latest 2> /dev/null; true
+.PHONY: all run build up down clean

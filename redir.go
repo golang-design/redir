@@ -67,6 +67,7 @@ func runServer() {
 	if err := http.ListenAndServe(conf.Addr, nil); err != nil {
 		log.Printf("ListenAndServe %s: %v\n", conf.Addr, err)
 	}
+	s.close()
 }
 
 func runCmd() {

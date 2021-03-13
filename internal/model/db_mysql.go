@@ -51,6 +51,9 @@ func (db Store) StoreAlias(ctx context.Context, r *Redirect) error {
 INSERT INTO collink (alias, kind, url, private, created_at, updated_at)
 VALUES(?, ?, ?, ?, ?, ?)
 `, r.Alias, r.Kind, r.URL, r.Private, now, now)
+	if err != nil {
+		return err
+	}
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -65,6 +68,9 @@ UPDATE collink
 SET url=?
 WHERE alias=?
 `, red.URL, red.Alias)
+	if err != nil {
+		return err
+	}
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -75,9 +81,15 @@ WHERE alias=?
 // DeleteAlias deletes a given short alias if exists
 func (db Store) DeleteAlias(ctx context.Context, a string) error {
 	tx, err := db.sqlxDB.Begin()
+	if err != nil {
+		return err
+	}
 	query, args, err := sqlx.In(`
 DELETE FROM collink WHERE alias=?
 `, a)
+	if err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -86,6 +98,9 @@ DELETE FROM collink WHERE alias=?
 	query, args, err = sqlx.In(`
 DELETE FROM visit WHERE alias=?
 `, a)
+	if err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -107,6 +122,9 @@ SELECT alias,
 FROM collink
 WHERE alias=?
 `, a)
+	if err != nil {
+		return nil, err
+	}
 	red := []*Redirect{}
 	err = db.sqlxDB.SelectContext(ctx, &red, query, args...)
 	if err != nil {
@@ -129,6 +147,9 @@ WHERE alias=?
   AND created_at BETWEEN ? AND ?
 GROUP BY referer
 `, a, k, start, end)
+	if err != nil {
+		return nil, err
+	}
 	ref := []Refstat{}
 	err = db.sqlxDB.SelectContext(ctx, &ref, query, args...)
 	if err != nil {
@@ -148,6 +169,9 @@ WHERE alias=?
   AND created_at BETWEEN ? AND ?
 GROUP BY ua
 `, a, k, start, end)
+	if err != nil {
+		return nil, err
+	}
 	ref := []UAstat{}
 	err = db.sqlxDB.SelectContext(ctx, &ref, query, args...)
 	if err != nil {
@@ -168,6 +192,9 @@ WHERE alias=?
 GROUP BY time
 ORDER BY time
 `, a, k, start, end)
+	if err != nil {
+		return nil, err
+	}
 	timehists := []Timehist{}
 	err = db.sqlxDB.SelectContext(ctx, &timehists, query, args...)
 	if err != nil {
@@ -182,6 +209,9 @@ func (db Store) RecordVisit(ctx context.Context, v *Visit) error {
 INSERT INTO visit (alias, kind, ip, ua, referer, created_at)
 VALUES(?, ?, ?, ?, ?, ?)
 `, v.Alias, v.Kind, v.IP, v.UA, v.Referer, v.Time)
+	if err != nil {
+		return err
+	}
 	_, err = db.sqlxDB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
@@ -199,6 +229,9 @@ FROM visit
 WHERE kind = ?
 GROUP BY alias
 `, kind)
+	if err != nil {
+		return nil, err
+	}
 	rs := []Record{}
 	err = db.sqlxDB.SelectContext(ctx, &rs, query, args...)
 	if err != nil {

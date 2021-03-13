@@ -85,7 +85,6 @@ func importFile(fname string) {
 			}
 		}
 	}
-	return
 }
 
 // shortCmd processes the given alias and link with a specified op.
