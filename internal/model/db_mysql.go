@@ -228,6 +228,7 @@ SELECT alias,
 FROM visit
 WHERE kind = ?
 GROUP BY alias
+ORDER BY pv DESC
 `, kind)
 	if err != nil {
 		return nil, err
