@@ -182,7 +182,7 @@ changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
   function addUACharts(id) {
     const chartDom = document.getElementById(`${id}-data-stat-ua`)
-    fetchData('/s?' + new URLSearchParams({
+    fetchData('/s/?' + new URLSearchParams({
       a: id.replace('alias-', ''),
       stat: 'ua',
       // TODO: data zoom
@@ -258,7 +258,7 @@ changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
   function addRefererCharts(id) {
     const chartDom = document.getElementById(`${id}-data-stat-referer`)
-    fetchData('/s?' + new URLSearchParams({
+    fetchData('/s/?' + new URLSearchParams({
       a: id.replace('alias-', ''),
       stat: 'referer',
       // TODO: data zoom
@@ -295,7 +295,7 @@ changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
 
   function addTimeCharts(id) {
     const chartDom = document.getElementById(`${id}-data-stat-time`)
-    fetchData('/s?' + new URLSearchParams({
+    fetchData('/s/?' + new URLSearchParams({
       a: id.replace('alias-', ''),
       stat: 'time',
       // TODO: data zoom
