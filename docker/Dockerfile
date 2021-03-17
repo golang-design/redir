@@ -1,8 +1,9 @@
-# Copyright 2020 The golang.design Initiative Authors.
+# Copyright 2021 The golang.design Initiative Authors.
 # All rights reserved. Use of this source code is governed
 # by a MIT license that can be found in the LICENSE file.
 
-FROM golang:1.15.6
+FROM alpine
 WORKDIR /app
 COPY . .
-CMD ["/app/redir.app", "-s"]
+EXPOSE 8080
+CMD ["/app/redir", "-s"]

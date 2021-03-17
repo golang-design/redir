@@ -1,34 +1,24 @@
-# Copyright 2020 The golang.design Initiative Authors.
+# Copyright 2021 The golang.design Initiative Authors.
 # All rights reserved. Use of this source code is governed
 # by a MIT license that can be found in the LICENSE file.
 
 VERSION = $(shell git describe --always --tags)
-BUILDTIME = $(shell date +%FT%T%z)
-GOPATH=$(shell go env GOPATH)
-IMAGE = redir
-BINARY = redir.app
-TARGET = -o $(BINARY)
-BUILD_SETTINGS = -ldflags="-X main.Version=$(VERSION) -X main.BuildTime=$(BUILDTIME)"
-BUILD_FLAGS = $(TARGET) $(BUILD_SETTINGS) -mod=vendor
+NAME = redir
+BUILD_FLAGS = -o $(NAME) -mod=vendor
 
-all: native
-native:
+all:
 	go build $(BUILD_FLAGS)
 run:
-	./$(BINARY) -s
+	./$(NAME) -s
 build:
-	GOOS=linux go build $(BUILD_FLAGS)
-	docker build -t $(IMAGE):$(VERSION) -t $(IMAGE):latest -f docker/Dockerfile .
-up: down
+	CGO_ENABLED=0 GOOS=linux go build $(BUILD_FLAGS)
+	docker build -f docker/Dockerfile -t $(NAME):latest .
+up:
 	docker-compose -f docker/docker-compose.yml up -d
 down:
 	docker-compose -f docker/docker-compose.yml down
-test:
-	mkdir -p build
-	go test -cover -coverprofile=build/cover.test -v ./...
-	go tool cover -html=build/cover.test -o build/cover.html
-clean: down
-	rm redir.app
+clean:
+	rm -rf $(NAME)
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
-	docker rmi -f $(IMAGE):latest $(IMAGE):$(VERSION) 2> /dev/null; true
-.PHONY: all native run build up down test clean
+	docker rmi -f $(NAME):latest 2> /dev/null; true
+.PHONY: all run build up down clean

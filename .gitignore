@@ -18,3 +18,9 @@
 build/
 data/redis
 data/backup
+data/mysql
+migrate/dump/ips
+migrate/dump/alias
+.idea/*
+redir
+.DS_Store

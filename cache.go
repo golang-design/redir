@@ -1,3 +1,10 @@
+// Copyright 2021 The golang.design Initiative Authors.
+// All rights reserved. Use of this source code is governed
+// by a MIT license that can be found in the LICENSE file.
+//
+// Originally written by Changkun Ou <changkun.de> at
+// changkun.de/s/redir, adopted by Mai Yang <maiyang.me>.
+
 package main
 
 import (
@@ -37,11 +44,8 @@ func newLRU(doexpire bool) *lru {
 // not synced.
 func (l *lru) clear() {
 	t := time.NewTicker(time.Minute * 5)
-	for {
-		select {
-		case <-t.C:
-			l.flush()
-		}
+	for range t.C {
+		l.flush()
 	}
 }
 
@@ -95,5 +99,4 @@ func (l *lru) Put(k, v string) {
 	} else {
 		l.size++
 	}
-	return
 }

@@ -1,42 +1,38 @@
-# Copyright 2020 The golang.design Initiative Authors.
+# Copyright 2021 The golang.design Initiative Authors.
 # All rights reserved. Use of this source code is governed
 # by a MIT license that can be found in the LICENSE file.
 
 version: "3"
-
 services:
   redir:
     container_name: redir
     restart: always
-    volumes:
-      - ../data/backup:/app/data/backup
     image: redir:latest
     environment:
-      REDIR_CONF: ./data/container.yml
-    cap_add:
-      - SYS_PTRACE # for debugging
+      REDIR_CONF: ./data/redirconf.yml
     ports:
       - "9123:8080"
     depends_on:
-      - redis
+      - mysql
+    deploy:
+      replicas: 1
     networks:
-      redirnet:
-        ipv4_address: 172.16.1.10
-  redis:
-    container_name: redis
-    restart: always
-    volumes:
-      - ../data/redis:/data
-    image: redis:6.0
+      - traefik_proxy
+  mysql:
+    container_name: redirdb
+    image: mysql:latest
     ports:
-      - "6379:6379"
+      - "3306:3306"
+    volumes:
+      - ../data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: redir
+    cap_add:
+      - SYS_NICE
+    restart: always
     networks:
-      redirnet:
-        ipv4_address: 172.16.1.11
+      - traefik_proxy
 networks:
-  redirnet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.16.1.0/24
+  traefik_proxy:
+    external: true
