@@ -28,6 +28,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: redir
+    cap_add:
+      - SYS_NICE
     restart: always
     networks:
       - traefik_proxy
