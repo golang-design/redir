@@ -139,7 +139,7 @@ WHERE alias=?
 // CountReferer fetches and counts all referers of a given alias
 func (db Store) CountReferer(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Refstat, error) {
 	query, args, err := sqlx.In(`
-SELECT referer,
+SELECT IFNULL(referer, 'NULL') AS referer,
        COUNT(*) AS count
 FROM visit
 WHERE alias=?
@@ -161,7 +161,7 @@ GROUP BY referer
 // CountUA fetches and counts all uas of a given alias
 func (db Store) CountUA(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]UAstat, error) {
 	query, args, err := sqlx.In(`
-SELECT ua,
+SELECT IFNULL(ua, 'NULL') AS ua,
        COUNT(*) AS count
 FROM visit
 WHERE alias=?
