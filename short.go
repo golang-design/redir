@@ -217,7 +217,7 @@ func (s *server) shortHandler(kind model.AliasKind) http.Handler {
 			validFrom := struct {
 				ValidFrom string
 			}{
-				ValidFrom: "03/21/2021 12:00:00",
+				ValidFrom: "03/21/2021 20:00:00",
 			}
 
 			err := waitTmpl.Execute(w, validFrom)
