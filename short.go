@@ -211,8 +211,24 @@ func (s *server) shortHandler(kind model.AliasKind) http.Handler {
 			s.cache.Put(alias, url)
 		}
 
-		// redirect the user immediate, but run pv/uv count in background
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		startTime, _ := time.Parse("2006-01-02 15:04:05", "2021-03-21 12:00:00")
+		if alias == "talkgo3years" && time.Now().UTC().Before(startTime) {
+			waitTmpl := template.Must(template.ParseFiles("public/wait.html"))
+			validFrom := struct {
+				ValidFrom string
+			}{
+				ValidFrom: "03/21/2021 12:00:00",
+			}
+
+			err := waitTmpl.Execute(w, validFrom)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		} else {
+			// redirect the user immediate, but run pv/uv count in background
+			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		}
 
 		// count visit in another goroutine so it won't block the redirect.
 		go func() {
