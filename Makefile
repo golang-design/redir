@@ -17,6 +17,8 @@ up:
 	docker-compose -f docker/docker-compose.yml up -d
 down:
 	docker-compose -f docker/docker-compose.yml down
+status:
+	docker-compose -f docker/docker-compose.yml ps -a
 clean:
 	rm -rf $(NAME)
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
