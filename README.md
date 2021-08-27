@@ -79,12 +79,13 @@ Moreover, it is possible to visit [`/s`](https://golang.design/s) or [`/r`](http
 `Makefile` defines different ways to build the service:
 
 ```bash
-$ make       # build native binary
-$ make run   # assume your local redis is running
-$ make build # build docker images
-$ make up    # run via docker-compose
-$ make down  # remove compose stuff
-$ make clean # cleanup
+$ make        # build native binary
+$ make run    # assume your local redis is running
+$ make build  # build docker images
+$ make up     # run via docker-compose
+$ make down   # remove compose stuff
+$ make status # view compose status
+$ make clean  # cleanup
 ```
 
 ## Troubleshooting
