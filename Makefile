@@ -23,4 +23,4 @@ clean:
 	rm -rf $(NAME)
 	docker rmi -f $(shell docker images -f "dangling=true" -q) 2> /dev/null; true
 	docker rmi -f $(NAME):latest 2> /dev/null; true
-.PHONY: all run build up down clean
+.PHONY: run build up down status clean
