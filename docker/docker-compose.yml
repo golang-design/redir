@@ -5,13 +5,13 @@
 version: "3"
 services:
   redir:
-    container_name: redir
+    container_name: golang-design/redir
     restart: always
-    image: redir:latest
+    image: golang-design/redir:latest
     environment:
       REDIR_CONF: ./data/redirconf.yml
     ports:
-      - "9123:8080"
+      - "80:80"
     depends_on:
       - mysql
     deploy:
@@ -19,7 +19,7 @@ services:
     networks:
       - traefik_proxy
   mysql:
-    container_name: redirdb
+    container_name: golang-design/redirdb
     image: mysql:latest
     ports:
       - "3306:3306"
