@@ -10,23 +10,10 @@ services:
     image: golangdesign-redir:latest
     environment:
       REDIR_CONF: ./data/redirconf.yml
-    depends_on:
-      - golangdesign-mysql
+    volumes:
+      - ../data:/app/data
     deploy:
       replicas: 1
-    networks:
-      - traefik_proxy
-  golangdesign-mysql:
-    container_name: golangdesign-redirdb
-    image: mysql:latest
-    volumes:
-      - ../data/mysql:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: redir
-    cap_add:
-      - SYS_NICE
-    restart: always
     networks:
       - traefik_proxy
 networks:

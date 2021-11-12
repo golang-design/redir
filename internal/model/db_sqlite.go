@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Store is persistent storage that provides a group of operations
@@ -26,7 +26,7 @@ type Store struct {
 // further operations. It returns an error if the database
 // instance is not able to connect.
 func NewDB(dsn string) (*Store, error) {
-	db, err := sqlx.Open("mysql", dsn)
+	db, err := sqlx.Open("sqlite3", dsn)
 	if err != nil {
 		fmt.Printf("connect server failed, err:%v\n", err)
 		return nil, err
@@ -183,7 +183,7 @@ GROUP BY ua
 // CountVisitHist counts the recorded history every an hour from Visit history.
 func (db Store) CountVisitHist(ctx context.Context, a string, k AliasKind, start, end time.Time) ([]Timehist, error) {
 	query, args, err := sqlx.In(`
-SELECT CONVERT(DATE_FORMAT(created_at,'%Y-%m-%d-00:00:00'),DATETIME) AS time,
+SELECT created_at AS time,
        COUNT(1) AS count
 FROM visit
 WHERE alias=?

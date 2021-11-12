@@ -11,21 +11,17 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var dsn = "root:dc@tcp(127.0.0.1:3306)/" + dbname + "?charset=utf8mb4&parseTime=true"
+var dsn = "../../data/redir.db"
 
 func TestStoreAlias(t *testing.T) {
-	mySQLDB, err := NewDB(dsn)
+	db, err := NewDB(dsn)
 	if err != nil {
 		t.Fatalf("NewDB with err: %v", err)
 	}
 	ctx := context.Background()
-	_, err = mySQLDB.sqlxDB.ExecContext(ctx, `truncate table collink`)
-	if err != nil {
-		t.Fatalf("truncate table collink with err: %v", err)
-	}
 	alias := "T1"
 	redirURL := "https://golang.design/s/talkgo"
 	red := &Redirect{
@@ -35,11 +31,11 @@ func TestStoreAlias(t *testing.T) {
 		Private: false,
 	}
 
-	err = mySQLDB.StoreAlias(ctx, red)
+	err = db.StoreAlias(ctx, red)
 	if err != nil {
 		t.Fatalf("StoreAlias with err: %v", err)
 	}
-	ret, err := mySQLDB.FetchAlias(ctx, alias)
+	ret, err := db.FetchAlias(ctx, alias)
 	if err != nil {
 		t.Fatalf("FetchAlias with err: %v", err)
 	}
@@ -48,22 +44,22 @@ func TestStoreAlias(t *testing.T) {
 	}
 	ret.URL = "https://golang.design/s/go-questions"
 	ret.Kind = 1
-	err = mySQLDB.UpdateAlias(ctx, ret)
+	err = db.UpdateAlias(ctx, ret)
 	if err != nil {
 		t.Fatalf("UpdateAlias with err: %v", err)
 	}
-	ret, err = mySQLDB.FetchAlias(ctx, alias)
+	ret, err = db.FetchAlias(ctx, alias)
 	if err != nil {
 		t.Fatalf("FetchAlias with err: %v", err)
 	}
 	if ret.URL == redirURL {
 		t.Fatalf("FetchAlias URL must be not equal, but got %v", ret.URL)
 	}
-	err = mySQLDB.DeleteAlias(ctx, alias)
+	err = db.DeleteAlias(ctx, alias)
 	if err != nil {
 		t.Fatalf("DeleteAlias with err: %v", err)
 	}
-	ret, err = mySQLDB.FetchAlias(ctx, alias)
+	ret, err = db.FetchAlias(ctx, alias)
 	if err == nil {
 		t.Fatalf("FetchAlias with err: %v", err)
 	}
@@ -73,15 +69,11 @@ func TestStoreAlias(t *testing.T) {
 }
 
 func TestVisit(t *testing.T) {
-	mySQLDB, err := NewDB(dsn)
+	db, err := NewDB(dsn)
 	if err != nil {
 		t.Fatalf("NewDB with err: %v", err)
 	}
 	ctx := context.Background()
-	_, err = mySQLDB.sqlxDB.ExecContext(ctx, `truncate table visit`)
-	if err != nil {
-		t.Fatalf("truncate table visit with err: %v", err)
-	}
 
 	now := time.Now()
 	visits := []*Visit{
@@ -94,12 +86,12 @@ func TestVisit(t *testing.T) {
 	}
 
 	for _, v := range visits {
-		err = mySQLDB.RecordVisit(ctx, v)
+		err = db.RecordVisit(ctx, v)
 		if err != nil {
 			t.Fatalf("RecordVisit with err: %v", err)
 		}
 	}
-	ret, err := mySQLDB.CountReferer(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
+	ret, err := db.CountReferer(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
 	if err != nil {
 		t.Fatalf("CountReferer with err: %v", err)
 	}
@@ -107,7 +99,7 @@ func TestVisit(t *testing.T) {
 		t.Fatalf("CountReferer len is 1, but got: %d", len(ret))
 	}
 
-	uast, err := mySQLDB.CountUA(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
+	uast, err := db.CountUA(ctx, "t2", 1, now.Add(-1*time.Second), now.Add(1*time.Second))
 	if err != nil {
 		t.Fatalf("CountUA with err: %v", err)
 	}
@@ -115,7 +107,7 @@ func TestVisit(t *testing.T) {
 		t.Fatalf("CountUA result is not equal 1, got: %v", len(uast))
 	}
 
-	cvhst, err := mySQLDB.CountVisitHist(ctx, "t2", 1, now.Add(-10*time.Second), now.Add(1*time.Second))
+	cvhst, err := db.CountVisitHist(ctx, "t2", 1, now.Add(-10*time.Second), now.Add(1*time.Second))
 	if err != nil {
 		t.Fatalf("CountVisitHist with err: %v", err)
 	}
@@ -126,7 +118,7 @@ func TestVisit(t *testing.T) {
 		t.Fatalf("CountUA result want 1, got: %v", cvhst[0].Count)
 	}
 
-	cvhst, err = mySQLDB.CountVisitHist(ctx, "t3", 1, now.Add(-10*time.Second), now.Add(1*time.Second))
+	cvhst, err = db.CountVisitHist(ctx, "t3", 1, now.Add(-10*time.Second), now.Add(1*time.Second))
 	if err != nil {
 		t.Fatalf("CountVisitHist with err: %v", err)
 	}
@@ -137,7 +129,7 @@ func TestVisit(t *testing.T) {
 		t.Fatalf("CountVisitHist result want 1, got: %v", cvhst[0].Count)
 	}
 
-	rs, err := mySQLDB.CountVisit(ctx, 1)
+	rs, err := db.CountVisit(ctx, 1)
 	if err != nil {
 		t.Fatalf("CountVisit with err: %v", err)
 	}

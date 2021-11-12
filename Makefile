@@ -11,7 +11,7 @@ all:
 run:
 	./$(NAME) -s
 build:
-	CGO_ENABLED=0 GOOS=linux go build $(BUILD_FLAGS)
+	CGO_ENABLED=1 GOOS=linux go build $(BUILD_FLAGS)
 	docker build -f docker/Dockerfile -t $(NAME):latest .
 up:
 	docker-compose -f docker/docker-compose.yml up -d
