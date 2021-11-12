@@ -3,7 +3,7 @@
 # by a MIT license that can be found in the LICENSE file.
 
 VERSION = $(shell git describe --always --tags)
-NAME = golang-design/redir
+NAME = golangdesign-redir
 BUILD_FLAGS = -o $(NAME) -mod=vendor
 
 all:

@@ -5,8 +5,8 @@
 ---
 title: "The golang.design Initiative"
 host: https://golang.design
-addr: :8080
-store: root:root@tcp(redirdb:3306)/redir?charset=utf8mb4&parseTime=true
+addr: :80
+store: root:root@tcp(golangdesign-redirdb:3306)/redir?charset=utf8mb4&parseTime=true
 s:
   prefix: /s/
 r:
@@ -16,6 +16,6 @@ x:
   prefix: /x/
   vcs: git
   import_path: golang.design/x/*
-  repo_path: https://github.com/golang-design/*
+  repo_path: https://github.com/golang-design
   godoc_host: https://pkg.go.dev/
 google_analytics: UA-80889616-4

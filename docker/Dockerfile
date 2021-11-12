@@ -5,5 +5,5 @@
 FROM alpine
 WORKDIR /app
 COPY . .
-EXPOSE 8080
-CMD ["/app/redir", "-s"]
+EXPOSE 80
+CMD ["/app/golangdesign-redir", "-s"]
