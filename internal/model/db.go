@@ -18,31 +18,15 @@ var (
 	ErrExistedAlias = errors.New("alias is existed")
 )
 
-// AliasKind represents the kind of an alias.
-type AliasKind int
-
-// All kinds of aliases
-const (
-	KindShort AliasKind = iota
-	KindRandom
-)
-
-const (
-	dbname = "redir"
-)
-
-// Redirect records a kind of alias and its correlated link.
+// Redirect records alias and its correlated link.
 type Redirect struct {
-	Alias   string    `json:"alias"   db:"alias"`
-	Kind    AliasKind `json:"kind"    db:"kind"`
-	URL     string    `json:"url"     db:"url"`
-	Private bool      `json:"private" db:"private"`
+	Alias string `json:"alias"   db:"alias"`
+	URL   string `json:"url"     db:"url"`
 }
 
 // Visit indicates an Record of Visit pattern.
 type Visit struct {
 	Alias   string    `json:"alias"   db:"alias"`
-	Kind    AliasKind `json:"kind"    db:"kind"`
 	IP      string    `json:"ip"      db:"ip"`
 	UA      string    `json:"ua"      db:"ua"`
 	Referer string    `json:"referer" db:"referer"`
@@ -86,8 +70,8 @@ type RedirVisitDataModel interface {
 }
 
 type RedirStatModel interface {
-	CountReferer(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Refstat, error)
-	CountUA(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]UAstat, error)
-	CountVisitHist(ctx context.Context, alias string, k AliasKind, start, end time.Time) ([]Timehist, error)
-	CountVisit(context.Context, AliasKind) (rs []Record, err error)
+	CountReferer(ctx context.Context, alias string, start, end time.Time) ([]Refstat, error)
+	CountUA(ctx context.Context, alias string, start, end time.Time) ([]UAstat, error)
+	CountVisitHist(ctx context.Context, alias string, start, end time.Time) ([]Timehist, error)
+	CountVisit(context.Context) (rs []Record, err error)
 }

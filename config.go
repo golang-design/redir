@@ -23,10 +23,6 @@ type config struct {
 	S     struct {
 		Prefix string `yaml:"prefix"`
 	} `yaml:"s"`
-	R struct {
-		Length int    `yaml:"length"`
-		Prefix string `yaml:"prefix"`
-	} `yaml:"r"`
 	X struct {
 		Prefix     string `yaml:"prefix"`
 		VCS        string `yaml:"vcs"`

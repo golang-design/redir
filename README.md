@@ -1,15 +1,14 @@
 # redir
 
-a request redirector
+a request redirector, aka URL shortener
 
 ## Usage
 
 The current `redir` implmenets the following features:
 
-- Link shortener: shorten links under `/s` and `/r`
+- Link shortener: shorten links under `/s`
 - Go [Vanity Import](https://golang.org/cmd/go/#hdr-Remote_import_paths): redirect domain/x to configured VCS and pkg.go.dev for API documentation
 - PV/UV timeline, visitor referer, devices visualization
-
 
 The [default configuration](./config.yml) is embedded into the binary.
 
@@ -40,7 +39,6 @@ examples:
 redir -s                  run the redir service
 redir -f ./import.yml     import aliases from a file
 redir -a alias -l link    allocate new short link if possible
-redir -l link             allocate a random alias for the given link if possible
 redir -op fetch -a alias  fetch alias information
 ```
 
@@ -55,14 +53,7 @@ https://golang.design/s/changkun
 
 creates a new alias under [golang.design/s/changkun](https://golang.design/s/changkun).
 
-If the `-a` is not provided, then redir command will generate a random string as an alias, but the link can only be accessed under `/r/alias`. For instance:
-
-```
-$ redir -l https://changkun.de
-https://golang.design/r/qFlKSP
-```
-
-creates a new alias under [golang.design/r/qFlKSP](https://golang.design/r/qFlKSP).
+If the `-a` is not provided, then redir command will throw an error.
 
 Import from a YAML file is also possible, for instance:
 
@@ -72,7 +63,7 @@ $ redir -f import.yml
 
 The aliases are either imported as a new alias or updated for an existing alias.
 
-Moreover, it is possible to visit [`/s`](https://golang.design/s) or [`/r`](https://golang.design/r) directly listing all exist aliases under [golang.design](https://golang.design/).
+Moreover, it is possible to visit [`/s`](https://golang.design/s) directly listing all exist aliases under [golang.design](https://golang.design/).
 
 ## Build
 

@@ -50,8 +50,7 @@ func (s *server) registerHandler() {
 	l := logging()
 
 	// short redirector
-	http.Handle(conf.S.Prefix, l(s.shortHandler(model.KindShort)))
-	http.Handle(conf.R.Prefix, l(s.shortHandler(model.KindRandom)))
+	http.Handle(conf.S.Prefix, l(s.shortHandler()))
 	// repo redirector
 	http.Handle(conf.X.Prefix, l(s.xHandler()))
 }

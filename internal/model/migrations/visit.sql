@@ -7,7 +7,6 @@
 CREATE TABLE `visit` (
     `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
     `alias` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
-    `kind` tinyint(1) NOT NULL DEFAULT '0',
     `ip` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `ua` varchar(1000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
     `referer` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

@@ -54,8 +54,7 @@ func importFile(fname string) {
 	}
 
 	var d struct {
-		Short  map[string]string `yaml:"short"`
-		Random []string          `yaml:"random"`
+		Short map[string]string `yaml:"short"`
 	}
 	err = yaml.Unmarshal(b, &d)
 	if err != nil {
@@ -72,34 +71,17 @@ func importFile(fname string) {
 			}
 		}
 	}
-	for _, link := range d.Random {
-		err = shortCmd(ctx, opUpdate, "", link)
-		if err != nil {
-			for i := 0; i < 10; i++ { // try 10x maximum
-				err = shortCmd(ctx, opCreate, "", link)
-				if err != nil {
-					log.Printf("cannot create alias %v: %v\n", alias, err)
-					continue
-				}
-				break
-			}
-		}
-	}
 }
 
 // shortCmd processes the given alias and link with a specified op.
 func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
-	s, err := model.NewDB(conf.Store)
+	var s *model.Store
+	s, err = model.NewDB(conf.Store)
 	if err != nil {
 		err = fmt.Errorf("cannot create a new alias: %w", err)
 		return
 	}
-	defer func() {
-		err = s.Close()
-		if err != nil {
-			err = fmt.Errorf("cannot %v close data store: %w", operate, err)
-		}
-	}()
+	defer s.Close()
 
 	defer func() {
 		if err != nil {
@@ -109,35 +91,15 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 
 	switch operate {
 	case opCreate:
-		kind := model.KindShort
-		if alias == "" {
-			// This might conflict with existing ones, it should be fine
-			// at the moment, the user of redir can always the command twice.
-			if conf.R.Length <= 0 {
-				conf.R.Length = 6
-			}
-			alias = randstr(conf.R.Length)
-			kind = model.KindRandom
-		}
 		err = s.StoreAlias(ctx, &model.Redirect{
-			Alias:   alias,
-			Kind:    kind,
-			URL:     link,
-			Private: false,
+			Alias: alias,
+			URL:   link,
 		})
 		if err != nil {
 			return
 		}
 		log.Printf("alias %v has been created:\n", alias)
-
-		var prefix string
-		switch kind {
-		case model.KindShort:
-			prefix = conf.S.Prefix
-		case model.KindRandom:
-			prefix = conf.R.Prefix
-		}
-		fmt.Printf("%s%s%s\n", conf.Host, prefix, alias)
+		fmt.Printf("%s%s%s\n", conf.Host, conf.S.Prefix, alias)
 	case opUpdate:
 		redir, err := s.FetchAlias(ctx, alias)
 		if err != nil {
@@ -168,7 +130,7 @@ func shortCmd(ctx context.Context, operate op, alias, link string) (err error) {
 
 // shortHandler redirects the current request to a known link if the alias is
 // found in the redir store.
-func (s *server) shortHandler(kind model.AliasKind) http.Handler {
+func (s *server) shortHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -183,18 +145,9 @@ func (s *server) shortHandler(kind model.AliasKind) http.Handler {
 			}
 		}()
 
-		// statistic page
-		var prefix string
-		switch kind {
-		case model.KindShort:
-			prefix = conf.S.Prefix
-		case model.KindRandom:
-			prefix = conf.R.Prefix
-		}
-
-		alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, prefix), "/")
+		alias := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, conf.S.Prefix), "/")
 		if alias == "" {
-			err = s.stats(ctx, kind, w, r)
+			err = s.stats(ctx, w, r)
 			return
 		}
 
@@ -221,7 +174,6 @@ func (s *server) shortHandler(kind model.AliasKind) http.Handler {
 
 			err := s.db.RecordVisit(ctx, &model.Visit{
 				Alias:   alias,
-				Kind:    kind,
 				IP:      readIP(r),
 				UA:      r.UserAgent(),
 				Referer: r.Referer(),
@@ -247,10 +199,7 @@ func (s *server) checkdb(ctx context.Context, alias string) (string, error) {
 // then creates a new alias and returns url of the vcs repository.
 func (s *server) checkvcs(ctx context.Context, alias string) (string, error) {
 	// construct the try path and make the request to vcs
-	repoPath := conf.X.RepoPath
-	if strings.HasSuffix(repoPath, "/*") {
-		repoPath = strings.TrimSuffix(repoPath, "/*")
-	}
+	repoPath := strings.TrimSuffix(conf.X.RepoPath, "/*")
 	tryPath := fmt.Sprintf("%s/%s", repoPath, alias)
 	resp, err := http.Get(tryPath)
 	if err != nil {
@@ -269,10 +218,8 @@ func (s *server) checkvcs(ctx context.Context, alias string) (string, error) {
 
 	// store such a try path
 	err = s.db.StoreAlias(ctx, &model.Redirect{
-		Alias:   alias,
-		Kind:    model.KindShort,
-		URL:     tryPath,
-		Private: false,
+		Alias: alias,
+		URL:   tryPath,
 	})
 	if err != nil {
 		if errors.Is(err, model.ErrExistedAlias) {
@@ -294,9 +241,9 @@ type records struct {
 	GoogleAnalytics string
 }
 
-func (s *server) stats(ctx context.Context, kind model.AliasKind, w http.ResponseWriter, r *http.Request) error {
+func (s *server) stats(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	if len(r.URL.Query()) != 0 {
-		err := s.statData(ctx, w, r, kind)
+		err := s.statData(ctx, w, r)
 		if !errors.Is(err, errInvalidStatParam) {
 			return err
 		}
@@ -305,22 +252,14 @@ func (s *server) stats(ctx context.Context, kind model.AliasKind, w http.Respons
 
 	w.Header().Add("Content-Type", "text/html")
 
-	var prefix string
-	switch kind {
-	case model.KindShort:
-		prefix = conf.S.Prefix
-	case model.KindRandom:
-		prefix = conf.R.Prefix
-	}
-
 	ars := records{
 		Title:           conf.Title,
 		Host:            r.Host,
-		Prefix:          prefix,
+		Prefix:          conf.S.Prefix,
 		Records:         nil,
 		GoogleAnalytics: conf.GoogleAnalytics,
 	}
-	rs, err := s.db.CountVisit(ctx, kind)
+	rs, err := s.db.CountVisit(ctx)
 	if err != nil {
 		return err
 	}
@@ -333,7 +272,6 @@ func (s *server) statData(
 	ctx context.Context,
 	w http.ResponseWriter,
 	r *http.Request,
-	k model.AliasKind,
 ) (retErr error) {
 	defer func() {
 		if retErr != nil {
@@ -364,7 +302,7 @@ func (s *server) statData(
 
 	switch mode {
 	case "referer":
-		referers, err := s.db.CountReferer(ctx, a, k, start, end)
+		referers, err := s.db.CountReferer(ctx, a, start, end)
 		if err != nil {
 			retErr = err
 			return
@@ -377,7 +315,7 @@ func (s *server) statData(
 		w.Write(b)
 		return
 	case "ua":
-		referers, err := s.db.CountUA(ctx, a, k, start, end)
+		referers, err := s.db.CountUA(ctx, a, start, end)
 		if err != nil {
 			retErr = err
 			return
@@ -390,7 +328,7 @@ func (s *server) statData(
 		w.Write(b)
 		return
 	case "time":
-		hist, err := s.db.CountVisitHist(ctx, a, k, start, end)
+		hist, err := s.db.CountVisitHist(ctx, a, start, end)
 		if err != nil {
 			retErr = err
 			return

@@ -6,12 +6,9 @@
 title: "The golang.design Initiative"
 host: https://golang.design
 addr: :80
-store: ./data/redir.db
+store: data/redir.db
 s:
   prefix: /s/
-r:
-  length: 6
-  prefix: /r/
 x:
   prefix: /x/
   vcs: git
