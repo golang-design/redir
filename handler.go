@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net"
@@ -110,6 +111,12 @@ func (s *server) xHandler() http.Handler {
 		}
 		importRoot = importPath + "/" + elem
 		repoRoot = conf.X.RepoPath + "/" + elem
+
+		// Handling 'git clone https://golang.design/x/repo'.
+		if suffix == "/info/refs" && strings.HasPrefix(req.URL.Query().Get("service"), "git-") && elem != "" {
+			http.Redirect(w, req, fmt.Sprintf("%s/info/refs?%s", repoRoot, req.URL.RawQuery), http.StatusFound)
+			return
+		}
 
 		d := &struct {
 			ImportRoot      string

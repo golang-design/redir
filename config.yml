@@ -13,6 +13,6 @@ x:
   prefix: /x/
   vcs: git
   import_path: golang.design/x/*
-  repo_path: https://github.com/golang-design/*
+  repo_path: https://github.com/golang-design
   godoc_host: https://pkg.go.dev/
 google_analytics: UA-80889616-4
