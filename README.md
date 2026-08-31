@@ -1,3 +1,31 @@
+> [!IMPORTANT]
+> **This repository is archived and no longer deployed.**
+>
+> `golang.design/s/` and `golang.design/x/` are now served by
+> [changkun/redir](https://github.com/changkun/redir), which serves both
+> `golang.design` and `changkun.de` from a single process and a single
+> database.
+>
+> **Why.** These were two separate codebases doing the same job on the same
+> host, each with its own store. This one was last updated in November
+> 2021; the other kept receiving dependency updates, security fixes and
+> features. Running both meant every change had to be made twice, and in
+> practice it only ever got made once.
+>
+> **The links still work.** All 63 short links and their 95,138 recorded
+> visits were migrated, with every alias verified to match this
+> repository's SQLite database on both page views and unique visitors.
+> Nothing was dropped and no URL changed. Each site keeps its own namespace
+> of aliases and its own statistics, so `golang.design/s/x` and
+> `changkun.de/s/x` remain different links.
+>
+> **The requests in #7 are all implemented** in the successor: it uses no
+> `sqlx`, its charts show page and unique views, and they accept a date
+> range.
+>
+> Issues and contributions belong on
+> [changkun/redir](https://github.com/changkun/redir).
+
 # redir
 
 a request redirector, aka URL shortener
